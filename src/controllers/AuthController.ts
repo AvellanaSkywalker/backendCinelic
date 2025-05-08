@@ -1,145 +1,154 @@
-import type { Request, Response } from 'express'
-import User from '../models/User'
-import { checkPassword, hashPassword } from '../utils/auth'
-import { generateToken } from '../utils/token'
-import { AuthEmail } from '../emails/AuthEmail'
-import { generateJWT } from '../utils/jwt'
+import type { Request, Response } from 'express';
+import User from '../models/User'; // Modelo de usuario
+import { checkPassword, hashPassword } from '../utils/auth'; // Funciones para manejar contraseñas
+import { generateToken } from '../utils/token'; // Generación de tokens de autenticación
+import { AuthEmail } from '../emails/AuthEmail'; // Manejo de correos electrónicos
+import { generateJWT } from '../utils/jwt'; // Función para generar JSON Web Tokens
 
-export class AuthContoller{
+export class AuthController {
+    
+    // Método para crear una nueva cuenta de usuario
     static createAccount = async (req: Request, res: Response): Promise<void> => {
+        const { email, password } = req.body;
 
-        const { email, password } = req.body
-
-        //prevenir duplicados
-        const userExists = await User.findOne({where: {email}})
-        if(userExists){
-            res.status(409).json({error: "cuenta usuario ya existe"})
-            return
+        // Verifica si el usuario ya existe en la base de datos
+        const userExists = await User.findOne({ where: { email } });
+        if (userExists) {
+            res.status(409).json({ error: "Cuenta de usuario ya existe" });
+            return;
         }
-        
-        try {
-            const user = new User(req.body)
-            user.password = await hashPassword(password)
-            user.token = generateToken()
-            await user.save()
 
+        try {
+            // Crea una nueva instancia del usuario con los datos proporcionados
+            const user = new User(req.body);
+            user.password = await hashPassword(password); // Hashea la contraseña antes de guardarla
+            user.token = generateToken(); // Genera un token para confirmación de cuenta
+            await user.save(); // Guarda el usuario en la base de datos
+
+            // Envía un correo de confirmación
             await AuthEmail.sendConfirmationEmail({
                 name: user.name,
                 email: user.email,
                 token: user.token
-            })
+            });
 
-            res.json('cuenta creada')
+            res.json("Cuenta creada");
         } catch (error) {
-            //console.log(error)
-            res.status(500).json({error: 'hubo un error'})
+            // En caso de error, responde con un código 500
+            res.status(500).json({ error: "Hubo un error al crear la cuenta" });
         }
+    };
 
-    }
-
+    // Método para confirmar una cuenta usando un token
     static confirmAccount = async (req: Request, res: Response) => {
-        const { token } = req.body
-        
-            const user = await User.findOne({where: {token}})
-            if(!user) {
-                const error = new Error('token no valido')
-                res.status(401).json({error: error.message})
-                return
-            }
-            user.confirmed = true
-            user.token = null
-            await user.save()
+        const { token } = req.body;
 
-            res.json("cuenta confirmada")
-    }
+        // Busca al usuario con el token proporcionado
+        const user = await User.findOne({ where: { token } });
+        if (!user) {
+            res.status(401).json({ error: "Token no válido" });
+            return;
+        }
 
+        // Confirma la cuenta y elimina el token
+        user.confirmed = true;
+        user.token = null;
+        await user.save();
+
+        res.json("Cuenta confirmada");
+    };
+
+    // Método para iniciar sesión
     static login = async (req: Request, res: Response) => {
-        const { email, password} = req.body
+        const { email, password } = req.body;
 
-        //revisa usuario existe
-        const user = await User.findOne({where: {email}})
-        if(!user){
-            res.status(404).json({error: "cuenta usuario no encontrado"})
-            return
+        // Busca el usuario por su email
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            res.status(404).json({ error: "Cuenta de usuario no encontrada" });
+            return;
         }
 
-        if(!user.confirmed){
-            res.status(403).json({error: "cuenta usuario no confirmada"})
-            return
+        // Verifica si la cuenta ha sido confirmada
+        if (!user.confirmed) {
+            res.status(403).json({ error: "Cuenta de usuario no confirmada" });
+            return;
         }
 
-        const isPasswordCorrect = await checkPassword(password, user.password)
-        if(!isPasswordCorrect){
-            res.status(401).json({error: "password incorrecto"})
-            return
+        // Verifica si la contraseña es correcta
+        const isPasswordCorrect = await checkPassword(password, user.password);
+        if (!isPasswordCorrect) {
+            res.status(401).json({ error: "Contraseña incorrecta" });
+            return;
         }
 
-        const token = generateJWT(user.id)
+        // Genera un token JWT para la sesión del usuario
+        const token = generateJWT(user.id);
 
-        res.json(token)
-    }
+        res.json(token);
+    };
 
-
+    // Método para recuperar contraseña
     static forgotPassword = async (req: Request, res: Response) => {
-        const { email } = req.body
+        const { email } = req.body;
 
-        //revisa usuario existe
-        const user = await User.findOne({where: {email}})
-        if(!user){
-            res.status(404).json({error: "cuenta usuario no encontrado"})
-            return
+        // Verifica si el usuario existe
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            res.status(404).json({ error: "Cuenta de usuario no encontrada" });
+            return;
         }
 
-        user.token = generateToken()
-        await user.save()
+        // Genera un nuevo token de recuperación
+        user.token = generateToken();
+        await user.save();
 
+        // Envía un correo con el token de recuperación
         await AuthEmail.sendPasswordResetToken({
             name: user.name,
             email: user.email,
             token: user.token
-        })
+        });
 
-        res.json('REVISA TU EMAIL PARA CONTINUAR')
+        res.json("Revisa tu correo electrónico para continuar con la recuperación");
+    };
 
-    }
-
-
+    // Método para validar un token de recuperación de cuenta
     static validateToken = async (req: Request, res: Response) => {
-        const { token } = req.body
+        const { token } = req.body;
 
-        const tokenExists = await User.findOne({where: {token}})
-        if(!tokenExists){
-            const error = new Error('token no valido')
-            res.status(404).json({error: error.message})
-            return
+        // Busca el usuario con el token proporcionado
+        const tokenExists = await User.findOne({ where: { token } });
+        if (!tokenExists) {
+            res.status(404).json({ error: "Token no válido" });
+            return;
         }
 
-        res.json("token valido")
-    }
+        res.json("Token válido");
+    };
 
-
+    // Método para cambiar la contraseña usando un token
     static resetPasswordWithToken = async (req: Request, res: Response) => {
-        const { token } = req.params
-        const { password } = req.body
-        const user = await User.findOne({where: {token}})
-        if(!user){
-            const error = new Error('token no valido')
-            res.status(404).json({error: error.message})
-            return
+        const { token } = req.params;
+        const { password } = req.body;
+
+        // Busca el usuario por el token
+        const user = await User.findOne({ where: { token } });
+        if (!user) {
+            res.status(404).json({ error: "Token no válido" });
+            return;
         }
 
-        //asigna nuevo password
-        user.password = await hashPassword(password)
-        user.token = null
-        await user.save()
+        // Asigna la nueva contraseña y borra el token
+        user.password = await hashPassword(password);
+        user.token = null;
+        await user.save();
 
-        res.json('EL PASSWORD SE MODIFICO')
-    }
+        res.json("La contraseña ha sido modificada");
+    };
 
+    // Método para obtener la información del usuario autenticado
     static user = async (req: Request, res: Response) => {
-        res.json(req.user)
-
-    }
-
-
+        res.json(req.user);
+    };
 }
