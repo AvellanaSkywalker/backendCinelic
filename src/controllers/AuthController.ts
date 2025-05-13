@@ -1,154 +1,193 @@
-import type { Request, Response } from 'express';
-import User from '../models/User'; // Modelo de usuario
-import { checkPassword, hashPassword } from '../utils/auth'; // Funciones para manejar contraseñas
-import { generateToken } from '../utils/token'; // Generación de tokens de autenticación
-import { AuthEmail } from '../emails/AuthEmail'; // Manejo de correos electrónicos
-import { generateJWT } from '../utils/jwt'; // Función para generar JSON Web Tokens
+import { Request, Response } from "express";
+import {generateJWT} from '../utils/jwt'
+import {hashPassword, checkPassword} from '../utils/auth'
+import jwt from 'jsonwebtoken';
+import User from "../models/User";
+import { AuthEmail } from "../emails/AuthEmail";
 
 export class AuthController {
-    
-    // Método para crear una nueva cuenta de usuario
-    static createAccount = async (req: Request, res: Response): Promise<void> => {
-        const { email, password } = req.body;
+  // REGISTRO DE USUARIO
+ static async createAccount(req: Request, res: Response): Promise<void> {
+    try {
+      const { name, email, password, role } = req.body;
 
-        // Verifica si el usuario ya existe en la base de datos
-        const userExists = await User.findOne({ where: { email } });
-        if (userExists) {
-            res.status(409).json({ error: "Cuenta de usuario ya existe" });
+      // No se permite registrar administradores desde este endpoint.
+      if (role && role.toLowerCase() === "admin") {
+        res.status(403).json({ error: "No se permite registrar un admin a través de esta ruta." });
+        return;
+      }
+
+      // Verificar si el email ya existe.
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        res.status(400).json({ error: "El email ya se encuentra registrado." });
+        return;
+      }
+
+      // Hashear la contraseña para almacenarla de forma segura.
+      const hashedPassword = await hashPassword(password);
+      const user = await User.create({
+        name,
+        email,
+        password: hashedPassword,
+        role: "user" // Fuerza siempre role "user"
+      });
+
+      if(!process.env.JWT_SECRET){
+        throw new Error("la variable esta configurada")
+      }
+
+      // Generar un token de confirmación (válido por 24h) para enviar por email (opcional).
+      console.log("JWT_SECRET en generación:", process.env.JWT_SECRET);
+      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "24h" });
+
+      // Enviar email de confirmación (asegúrate de que AuthEmail esté correctamente configurado).
+      await AuthEmail.sendConfirmationEmail({ name, email, token });
+
+      res.status(201).json({ message: "Cuenta creada correctamente. Revisa tu correo para confirmar la cuenta.", user });
+      return;
+    } catch (error) {
+      console.error("Error en createAccount:", error);
+      res.status(500).json({ error: "Error al crear la cuenta." });
+      return;
+    }
+  }
+
+  // CONFIRMACIÓN DE CUENTA VIA TOKEN
+static async confirmAccountByLink(req: Request, res: Response): Promise<void> {
+    try {
+        const {token} = req.params
+
+        if(!process.env.JWT_SECRET){//jhj
+        throw new Error("la variable esta configurada")
+        }
+
+        if (!token) {
+            res.status(400).json({ error: "Token no proporcionado." });
             return;
         }
 
-        try {
-            // Crea una nueva instancia del usuario con los datos proporcionados
-            const user = new User(req.body);
-            user.password = await hashPassword(password); // Hashea la contraseña antes de guardarla
-            user.token = generateToken(); // Genera un token para confirmación de cuenta
-            await user.save(); // Guarda el usuario en la base de datos
+        console.log('token recibido:', token)
+        console.log('JWT_SECRET en verificacion:', process.env.JWT_SECRET);
 
-            // Envía un correo de confirmación
-            await AuthEmail.sendConfirmationEmail({
-                name: user.name,
-                email: user.email,
-                token: user.token
-            });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as {id:number}
 
-            res.json("Cuenta creada");
-        } catch (error) {
-            // En caso de error, responde con un código 500
-            res.status(500).json({ error: "Hubo un error al crear la cuenta" });
+        await User.update({isVerified: true}, {where: {id:decoded.id}})
+
+        res.json({message: 'cuenta confirmada exitosamente'})
+    } catch (error) {
+        console.error("Error en confirmAccountByLink:", error);
+
+        if(error instanceof jwt.TokenExpiredError){
+          res.status(400).json({error: "token expirado"})
+        }else if(error instanceof jwt.JsonWebTokenError){
+          res.status(400).json({error: "token invalido"})
+        }else{
+          res.status(500).json({ error: "Error al confirmar la cuenta." });
         }
-    };
+        
+    }
+}
 
-    // Método para confirmar una cuenta usando un token
-    static confirmAccount = async (req: Request, res: Response) => {
-        const { token } = req.body;
+  // INICIO DE SESIÓN
+static async login(req: Request, res: Response): Promise<void> {
+    try {
+      const { email, password } = req.body;
+      const user = await User.findOne({ where: { email } });
 
-        // Busca al usuario con el token proporcionado
-        const user = await User.findOne({ where: { token } });
-        if (!user) {
-            res.status(401).json({ error: "Token no válido" });
-            return;
-        }
+      if (!user) {
+        res.status(401).json({ error: "Credenciales inválidas." });
+        return;
+      }
 
-        // Confirma la cuenta y elimina el token
-        user.confirmed = true;
-        user.token = null;
-        await user.save();
+      if (!user.isVerified) {
+        res.status(403).json({ error: "Debes verificar tu cuenta antes de iniciar sesión." });
+        return;
+      }
 
-        res.json("Cuenta confirmada");
-    };
+      // Validación extra para administradores
+      if (user.role === "admin" && !user.email.endsWith("@cineclic.ad.com")) {
+        res.status(403).json({ error: "Acceso restringido, el email admin no cumple con el dominio requerido." });
+        return;
+      }
 
-    // Método para iniciar sesión
-    static login = async (req: Request, res: Response) => {
-        const { email, password } = req.body;
+      const isPasswordValid = await checkPassword(password, user.password);
+      if (!isPasswordValid) {
+        res.status(401).json({ error: "Credenciales inválidas." });
+        return;
+      }
 
-        // Busca el usuario por su email
-        const user = await User.findOne({ where: { email } });
-        if (!user) {
-            res.status(404).json({ error: "Cuenta de usuario no encontrada" });
-            return;
-        }
+      // Generar el token JWT.
+      const token = generateJWT(user.id.toString());
 
-        // Verifica si la cuenta ha sido confirmada
-        if (!user.confirmed) {
-            res.status(403).json({ error: "Cuenta de usuario no confirmada" });
-            return;
-        }
+      res.status(200).json({ message: "Inicio de sesión exitoso.", token });
+      return;
+    } catch (error) {
+      console.error(`Error en login (${req.body.email}):`, error);
+      res.status(500).json({ error: "Error al iniciar sesión." });
+      return;
+    }
+}
 
-        // Verifica si la contraseña es correcta
-        const isPasswordCorrect = await checkPassword(password, user.password);
-        if (!isPasswordCorrect) {
-            res.status(401).json({ error: "Contraseña incorrecta" });
-            return;
-        }
+  // ENVÍO DE EMAIL PARA RECUPERACIÓN DE CONTRASEÑA
+  static async forgotPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+      const user = await User.findOne({ where: { email } });
 
-        // Genera un token JWT para la sesión del usuario
-        const token = generateJWT(user.id);
+      if (!user) {
+        res.status(404).json({ error: "El email no se encuentra registrado" });
+      }
 
-        res.json(token);
-    };
+      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, { expiresIn: "1h" });
 
-    // Método para recuperar contraseña
-    static forgotPassword = async (req: Request, res: Response) => {
-        const { email } = req.body;
+      // Usamos la función centralizada en `AuthEmail`
+      await AuthEmail.sendPasswordResetToken({ name: user.name, email: user.email, token });
 
-        // Verifica si el usuario existe
-        const user = await User.findOne({ where: { email } });
-        if (!user) {
-            res.status(404).json({ error: "Cuenta de usuario no encontrada" });
-            return;
-        }
+      res.json({ message: "Email de recuperación enviado" });
+    } catch (error) {
+      console.error("Error en forgotPassword:", error);
+      res.status(500).json({ error: "Error al enviar email de recuperación" });
+    }
+  }
 
-        // Genera un nuevo token de recuperación
-        user.token = generateToken();
-        await user.save();
+  static async resetPassword(req: Request, res: Response): Promise<void> {
+    try {
+        const { token, newPassword, confirmPassword } = req.body;
 
-        // Envía un correo con el token de recuperación
-        await AuthEmail.sendPasswordResetToken({
-            name: user.name,
-            email: user.email,
-            token: user.token
-        });
-
-        res.json("Revisa tu correo electrónico para continuar con la recuperación");
-    };
-
-    // Método para validar un token de recuperación de cuenta
-    static validateToken = async (req: Request, res: Response) => {
-        const { token } = req.body;
-
-        // Busca el usuario con el token proporcionado
-        const tokenExists = await User.findOne({ where: { token } });
-        if (!tokenExists) {
-            res.status(404).json({ error: "Token no válido" });
-            return;
+        if(newPassword !== confirmPassword){
+          res.status(400).json({error: "las contrasenias no coinciden"})
+          return;
         }
 
-        res.json("Token válido");
-    };
-
-    // Método para cambiar la contraseña usando un token
-    static resetPasswordWithToken = async (req: Request, res: Response) => {
-        const { token } = req.params;
-        const { password } = req.body;
-
-        // Busca el usuario por el token
-        const user = await User.findOne({ where: { token } });
-        if (!user) {
-            res.status(404).json({ error: "Token no válido" });
-            return;
+        if (!process.env.JWT_SECRET) {
+            throw new Error("JWT_SECRET no configurado.");
         }
 
-        // Asigna la nueva contraseña y borra el token
-        user.password = await hashPassword(password);
-        user.token = null;
-        await user.save();
+        // Verificar token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as { id: number };
 
-        res.json("La contraseña ha sido modificada");
-    };
+        // Hashear nueva contraseña
+        const hashedPassword = await hashPassword(newPassword);
 
-    // Método para obtener la información del usuario autenticado
-    static user = async (req: Request, res: Response) => {
-        res.json(req.user);
-    };
+        // Actualizar en DB
+        await User.update(
+            { password: hashedPassword },
+            { where: { id: decoded.id } }
+        );
+
+        res.json({ message: "Contrasenia actualizada exitosamente." });
+    } catch (error) {
+        console.error("Error en resetPassword:", error);
+
+        if (error instanceof jwt.TokenExpiredError) {
+            res.status(400).json({ error: "El enlace ha expirado." });
+        } else if (error instanceof jwt.JsonWebTokenError) {
+            res.status(400).json({ error: "Token inválido." });
+        } else {
+            res.status(500).json({ error: "Error al actualizar la contraseña." });
+        }
+    }
+}
+
 }

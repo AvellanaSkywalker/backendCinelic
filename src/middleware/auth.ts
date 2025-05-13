@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from 'jsonwebtoken';
-import User from "../models/User";
+import jwt from "jsonwebtoken";
+import User from '../models/User'
 
-// Extensión de la interfaz Request de Express para incluir un usuario autenticado
 declare global {
     namespace Express {
         interface Request {
@@ -11,46 +10,29 @@ declare global {
     }
 }
 
-// Middleware de autenticación
-export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
-    // Obtiene el token de autorización desde los headers
-    const bearer = req.headers.authorization;
+// Opcional: Extender la interface Request para agregar la propiedad "user"
+export interface AuthRequest extends Request {
+  user?: any;
+}
 
-    // Si no hay token, retorna un error de autorización
-    if (!bearer) {
-        const error = new Error('No autorizado');
-        res.status(401).json({ error: error.message });
-        return;
-    }
+export const authenticate = (req: AuthRequest, res: Response, next: NextFunction): any => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: "No se proporcionó token de autenticación" });
+  }
 
-    // Divide el header de autorización para obtener el token
-    const [, token] = bearer.split(' ');
+  // Se asume que el token se envía en el formato "Bearer <token>"
+  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ error: "Token de autenticación ausente" });
+  }
 
-    // Verifica si el token está presente, si no, retorna error
-    if (!token) {
-        const error = new Error('Token no válido');
-        res.status(401).json({ error: error.message });
-        return;
-    }
-
-    try {
-        // Verifica el token con la clave secreta almacenada en las variables de entorno
-        const decode = jwt.verify(token, process.env.JWT_SECRET);
-
-        // Comprueba si el token decodificado es un objeto y tiene un ID válido
-        if (typeof decode === 'object' && decode.id) {
-            // Busca el usuario en la base de datos y limita los atributos que se obtienen
-            req.user = await User.findByPk(decode.id, {
-                attributes: ['id', 'name', 'email']
-            });
-
-            // Continúa con el siguiente middleware
-            next();
-        }
-
-    } catch (error) {
-        // Si la verificación del token falla, retorna un error
-        res.status(500).json({ error: 'Token no válido' });
-    }
+  try {
+    // Verificar el token utilizando el secreto definido en las variables de entorno
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: "Token inválido" });
+  }
 };
-

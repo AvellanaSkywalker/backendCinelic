@@ -1,43 +1,49 @@
-import { ChainCondition } from "express-validator/lib/context-items"
-import { transport } from "../config/nodemailer"
+import { transport } from "../config/nodemailer";
 
 type EmailType = {
-    name: string
-    email: string
-    token: string
+    name: string;
+    email: string;
+    token: string;
+};
+
+export class AuthEmail {
+    // Enviar email de confirmación de cuenta
+static async sendConfirmationEmail({ name, email, token }: EmailType) {
+    if (!process.env.BACKEND_URL) {
+        throw new Error("BACKEND_URL no está definido en las variables de entorno.");
+    }
+
+    const confirmUrl = `${process.env.BACKEND_URL}/api/auth/confirm/${token}`;
+    console.log("Enlace de confirmación generado:", confirmUrl); // Para debuggear
+
+    await transport.sendMail({
+        from: "CineClic <no-reply@cineclic.com>",
+        to: email,
+        subject: "Confirma tu cuenta en CineClic",
+        html: `
+            <h1>¡Gracias por registrarte, ${name}!</h1>
+            <p>Confirma tu cuenta haciendo clic en el siguiente enlace:</p>
+            <a href="${confirmUrl}" target="_blank">Confirmar mi cuenta</a>
+            <p>Si no solicitaste este registro, puedes ignorar este mensaje.</p>
+        `,
+    });
 }
 
-export class AuthEmail{
-    static sendConfirmationEmail = async (user: EmailType) => {
-        const email = await transport.sendMail({
-            from: 'Cineclic <admin@cineclic.com>',
-            to: user.email,
-            subject: 'Cineclic - confirma tu cuenta',
+    // Enviar email de recuperación de contraseña
+    static async sendPasswordResetToken({ name, email, token }: EmailType) {
+        const resetUrl = `${process.env.BACKEND_URL}/api/auth/reset-password/${token}`;
+
+        await transport.sendMail({
+            from: "CineClic <admin@cineclic.com>",
+            to: email,
+            subject: "CineClic - RESTABLECE TU PASSWORD",
             html: `
-                <p>hola: ${user.name}, has creado tu ceunta en cineclic </p>
+                <p>Hola, ${name}, has solicitado restablecer tu contraseña en CineClic.</p>
                 <p>Visita el siguiente enlace:</p>
-                <a href="#">confirmar cuenta</a>
-                <p>ingresa token: <b>${user.token}</b></p>
-            `
-        })
+                <a href="${resetUrl}" target="_blank">REESTABLECER PASSWORD</a>
+            `,
+        });
 
-        console.log('mensaje enviado', email.messageId)
+        console.log(`Mensaje de recuperación de contraseña enviado a ${email}`);
     }
-
-    static sendPasswordResetToken = async (user: EmailType) => {
-        const email = await transport.sendMail({
-            from: 'Cineclic <admin@cineclic.com>',
-            to: user.email,
-            subject: 'Cineclic - RESTABLECE TU PASSWORD',
-            html: `
-                <p>hola: ${user.name}, has solicitado restablecer tu password en cineclic </p>
-                <p>Visita el siguiente enlace:</p>
-                <a href="#">REESTABLECER PASSWORD</a>
-                <p>ingresa token: <b>${user.token}</b></p>
-            `
-        })
-
-        console.log('mensaje enviado', email.messageId)
-    }
-
 }

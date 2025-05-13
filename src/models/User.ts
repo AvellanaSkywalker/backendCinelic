@@ -1,46 +1,44 @@
-import { Table, Column, Model, DataType, HasMany, Default, Unique, AllowNull,  } from "sequelize-typescript";
-import Budget from "./Budget";
+import { Table, Column, Model, DataType } from "sequelize-typescript";
+import bcrypt from "bcrypt";
 
-@Table({
-    tableName: 'users'
-})
+@Table({ tableName: 'users' })
+export default class User extends Model<User> {
+  @Column({
+    type: DataType.STRING, // El nombre debe ser un string
+    allowNull: false,
+  })
+  declare name: string;
 
-class User extends Model{
-    @AllowNull(false)
-    @Column({
-        type: DataType.STRING(50)
-    })
-    declare name: string
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    unique: true,
+  })
+  declare email: string;
 
-    @AllowNull(false)
-    @Column({
-        type: DataType.STRING(60)
-    })
-    declare password: string
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  declare password: string;
 
-    @Unique(true)
-    @AllowNull(false)
-    @Column({
-        type: DataType.STRING(50)
-    })
-    declare email: string
+  @Column({
+    type: DataType.ENUM('admin', 'user'),
+    allowNull: false,
+    defaultValue: 'user',
+  })
+  declare role: 'admin' | 'user';
 
-    @Column({
-        type: DataType.STRING(6)
-    })
-    declare token: string
-    
-    @Default(false)
-    @Column({
-        type: DataType.BOOLEAN
-    })
-    declare confirmed: boolean
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  })
+  declare isVerified: boolean;
 
-    @HasMany(() => Budget, {
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
-    })
-    declare budgets: Budget[]
+  // Método para hashear la contraseña antes de guardarla
+  static async hashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return await bcrypt.hash(password, saltRounds);
+  }
 }
-
-export default User
