@@ -6,7 +6,7 @@ import Room from './Room';
   tableName: 'screenings',
 })
 export class Screening extends Model<Screening> {
-  // Relación con Movie: cada screening pertenece a una película
+  // relacin con Movie cada screening pertenece a una pelicula
   @ForeignKey(() => Movie)
   @Column({
     type: DataType.INTEGER,
@@ -14,7 +14,7 @@ export class Screening extends Model<Screening> {
   })
   declare movieId: number;
 
-  // Relación con Room: cada screening se da en una sala
+  // relacion con Room cada screening se da en una sala
   @ForeignKey(() => Room)
   @Column({
     type: DataType.INTEGER,
@@ -22,32 +22,32 @@ export class Screening extends Model<Screening> {
   })
   declare roomId: number;
 
-  // Hora de inicio de la función (almacena la fecha y hora)
+  // hora  inicio de la funcn
   @Column({
     type: DataType.DATE,
     allowNull: false,
   })
   declare startTime: Date;
 
-  // Hora de fin de la función
+  // hora fin de la funcn
   @Column({
     type: DataType.DATE,
     allowNull: false,
   })
   declare endTime: Date;
 
-  // Precio del ticket para la función
+  // precio de ticket para la funcn
   @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: false,
   })
   declare price: number;
 
-  // Relación para poder acceder a la película asociada
+  // relacion para poder acceder a la pelicula asociada
   @BelongsTo(() => Movie)
   declare movie: Movie;
 
-  // Relación para poder acceder a la sala asociada
+  // relacion para poder acceder a la sala asociada
   @BelongsTo(() => Room)
   declare room: Room;
 }

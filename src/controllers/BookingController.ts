@@ -4,10 +4,10 @@ import User from "../models/User";
 import Screening from "../models/Screening";
 import Movie from "../models/Movie";
 import Room from "../models/Room";
-import { BookingEmail } from "../emails/BookingEmails"; // Archivo con funciones de envío de correo
+import { BookingEmail } from "../emails/BookingEmails"; // Archivo con funcion de envio de correo
 
 /**
- * Función auxiliar para generar un folio único con el formato "XXXX-XXXX".
+ * funcion auxiliar para generar un folio con el formato XXXX-XXXX
  */
 const generateFolio = (): string => {
   const digits = "0123456789";
@@ -22,7 +22,7 @@ const generateFolio = (): string => {
 export class BookingController {
 
   /**
-   *  Crea una nueva reserva y envía correo de confirmación.
+   *  crea una nueva reserva y envia correo de confirmacion
    */
   static async createBooking(req: Request, res: Response): Promise<void> {
     try {
@@ -68,7 +68,7 @@ export class BookingController {
       const folio = generateFolio();
       const bookingDate = new Date();
 
-      // Crear la reserva
+      // Crea la reserva
       const booking = await Booking.create({
         folio,
         bookingDate,
@@ -85,7 +85,7 @@ export class BookingController {
 
       await Room.update({ layout }, { where: { id: room.id } });
 
-      // Calcular precio total
+      // Calcula precio total
       const totalPrice = parseFloat(screening.price.toString()) * seats.length;
 
       // **Enviar correo de confirmación**
@@ -112,7 +112,7 @@ export class BookingController {
   }
 
   /**
-   *  Cancela una reserva y libera los asientos.
+   *  Cancela una reserva y libera los asientos
    */
   static async cancelBooking(req: Request, res: Response): Promise<void> {
     try {
@@ -152,13 +152,13 @@ export class BookingController {
         return;
       }
 
-      // Verificar la estructura de `seats` antes de iterar
+      // verifica la estructura seats antes de iterar
       if (!Array.isArray(booking.seats)) {
         res.status(500).json({ error: "Formato de asientos incorrecto." });
         return;
       }
 
-      // Liberar los asientos seleccionados
+      // Libera los asientos seleccionados
       const layout = room.layout as any;
       console.log("Estructura de layout.seats:", JSON.stringify(layout.seats, null, 2));
       console.log("Intentando liberar asientos:", booking.seats);
@@ -176,7 +176,7 @@ export class BookingController {
       await Room.update({ layout }, { where: { id: room.id } });
       console.log("Layout actualizado:", JSON.stringify(layout, null, 2));
 
-      // Cambiar el estado de la reserva a "CANCELADA"
+      // Cambia el estado de la reserva a "CANCELADA"
       await booking.update({ status: "CANCELADA"}); 
 
       //posiblemente eliminar este bloque
@@ -203,7 +203,7 @@ export class BookingController {
   }
 
   /**
-   *  Obtiene una reserva por folio.
+   *  obtiene una reserva por folio
    */
   static async getBookingByFolio(req: Request, res: Response): Promise<void> {
     try {
@@ -229,7 +229,7 @@ export class BookingController {
   }
 
   /**
-   *  Obtiene todas las reservas de un usuario.
+   *  pbtiene todas las reservas de un usuario
    */
   static async getUserBookings(req: Request, res: Response): Promise<void> {
     try {
@@ -240,7 +240,7 @@ export class BookingController {
       return;
       }
 
-      // Obtener todas las reservas del usuario
+      // obtiene todas las reservas del usuario
       const bookings = await Booking.findAll({ where: { userId }, order: [["createdAt", "DESC"]] });
 
       res.status(200).json({ bookings });

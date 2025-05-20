@@ -1,22 +1,23 @@
-// src/models/Booking.ts
 import { Table, Column, Model, DataType, ForeignKey } from "sequelize-typescript";
 import User from "./User";
 import Screening from "./Screening";
 
-@Table({ tableName: 'bookings' })
+@Table({ 
+  tableName: 'bookings' 
+})
 export default class Booking extends Model<Booking> {
   @Column({
     type: DataType.STRING,
     allowNull: false,
     unique: true
   })
-  declare folio: string; // Formato "XXXX-XXXX"
+  declare folio: string;
 
   @Column({
     type: DataType.DATE,
     allowNull: false
   })
-  declare bookingDate: Date; // Fecha y hora de la reserva
+  declare bookingDate: Date; 
 
   @Column({
     type: DataType.ENUM('ACTIVA', 'CANCELADA'),
@@ -29,7 +30,7 @@ export default class Booking extends Model<Booking> {
     type: DataType.JSON,
     allowNull: false
   })
-  declare seats: {row: string, column: string}[]; // Arreglo de asientos seleccionados
+  declare seats: {row: string, column: string}[]; // arreglo de asientos seleccionados
 
   @ForeignKey(() => User)
   @Column({

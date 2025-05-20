@@ -7,14 +7,14 @@ type EmailType = {
 };
 
 export class AuthEmail {
-    // Enviar email de confirmación de cuenta
+    // Envia email de confirmacion de cuenta
 static async sendConfirmationEmail({ name, email, token }: EmailType) {
     if (!process.env.BACKEND_URL) {
         throw new Error("BACKEND_URL no está definido en las variables de entorno.");
     }
 
     const confirmUrl = `${process.env.BACKEND_URL}/api/auth/confirm/${token}`;
-    console.log("Enlace de confirmación generado:", confirmUrl); // Para debuggear
+    console.log("Enlace de confirmación generado:", confirmUrl); // para debuggear
 
     await transport.sendMail({
         from: "CineClic <no-reply@cineclic.com>",
@@ -29,7 +29,7 @@ static async sendConfirmationEmail({ name, email, token }: EmailType) {
     });
 }
 
-    // Enviar email de recuperación de contraseña
+    // envia email de recuperacion de contrasenia
     static async sendPasswordResetToken({ name, email, token }: EmailType) {
         const resetUrl = `${process.env.BACKEND_URL}/api/auth/reset-password/${token}`;
 

@@ -10,7 +10,7 @@ async function createAdmin() {
     await db.authenticate();
     console.log(" Conexión a la base de datos establecida correctamente.");
 
-    // Sincroniza sin borrar datos
+    // sincroniza sin borrar datos
     await db.sync({ alter: true });
     console.log(" Modelos sincronizados correctamente.");
 
@@ -23,21 +23,21 @@ async function createAdmin() {
       return;
     }
 
-    // Verificar si el administrador ya existe
+    // verifica si el administrador ya existe
     const existingAdmin = await User.findOne({ where: { email: adminEmail } });
     if (existingAdmin) {
       console.log(" El administrador ya existe.");
       return;
     }
 
-    // Crear el usuario administrador
+    // crea el usuario administrador
     const passwordHashed = await hashPassword(adminPassword);
     await User.create({
       name: adminName,
       email: adminEmail,
       password: passwordHashed,
       role: "admin",
-      isVerified: true, // Asegurar que esté verificado
+      isVerified: true, // Asegura que este verificado
     });
 
     console.log(" Cuenta de administrador creada correctamente.");
@@ -46,7 +46,7 @@ async function createAdmin() {
   }
 }
 
-// Solo ejecuta si el archivo se corre directamente
+// solo ejecuta si el archivo se corre directamente
 if (require.main === module) {
   createAdmin();
 }

@@ -1,10 +1,12 @@
 import { Table, Column, Model, DataType } from "sequelize-typescript";
 import bcrypt from "bcrypt";
 
-@Table({ tableName: 'users' })
+@Table({ 
+  tableName: 'users' 
+})
 export default class User extends Model<User> {
   @Column({
-    type: DataType.STRING, // El nombre debe ser un string
+    type: DataType.STRING, 
     allowNull: false,
   })
   declare name: string;
@@ -36,7 +38,7 @@ export default class User extends Model<User> {
   })
   declare isVerified: boolean;
 
-  // Método para hashear la contraseña antes de guardarla
+  // metodo para hashear la contrasenia antes de guardarla
   static async hashPassword(password: string): Promise<string> {
     const saltRounds = 10;
     return await bcrypt.hash(password, saltRounds);

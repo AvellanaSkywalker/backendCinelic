@@ -11,13 +11,13 @@ export class Room extends Model<Room> {
     type: DataType.STRING,
     allowNull: false
   })
-  declare name: string; // Nombre de la sala
+  declare name: string; 
 
   @Column({
     type: DataType.INTEGER,
     allowNull: true
   })
-  declare capacity: number | null; // Capacidad, puede ser nula
+  declare capacity: number | null; 
 
 @Column({
   type: DataType.JSONB,
@@ -36,9 +36,8 @@ export class Room extends Model<Room> {
   })
 })
 declare layout: any;
- // Identificador o código del layout, obligatorio
+ // identificador del layout obligatorio
 
-  // Relación: Una sala puede tener múltiples screenings (funciones) asignados.
   @HasMany(() => Screening)
   declare screenings: Screening[];
 }

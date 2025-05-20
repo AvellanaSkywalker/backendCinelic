@@ -6,8 +6,8 @@ import cloudinary from '../config/cloudinary';
 
 export class MovieController {
   /**
-   * Crea una nueva película.
-   * Se esperan en el body: title, description, duration, rating, posterurl.
+   * Crea una nueva pelicula
+   * Se esperan en el body: title, description, duration, rating, posterurl
    * se puede envoar archivo en el campo image
    */
 static async createMovie(req: Request, res: Response): Promise<void> {
@@ -15,14 +15,14 @@ static async createMovie(req: Request, res: Response): Promise<void> {
     const { title, description, duration, rating } = req.body;
     let posterurl: string | null = null;
 
-    // Validación mínima de datos obligatorios; aquí se considera que title, duration y rating son requeridos.
+    // validacion de datos obligatorios se considera que title, duration y rating son requeridos
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: 'movies',
       });
       posterurl = result.secure_url;
 
-      // Eliminamos el archivo del almacenamiento local tras subirlo a Cloudinary
+      // Elimina el archivo de almacenamiento local tras subirlo a cloudinary
       fs.unlinkSync(req.file.path);
     }
 
@@ -36,7 +36,7 @@ static async createMovie(req: Request, res: Response): Promise<void> {
 
     res.status(201).json({
       message: 'Película creada exitosamente.',
-      movie: newMovie, // Corrección: referencia al objeto creado
+      movie: newMovie, // referencia al objeto creado
     });
   } catch (error) {
     console.error('Error al crear la película:', error);
@@ -48,8 +48,8 @@ static async createMovie(req: Request, res: Response): Promise<void> {
 
 
   /**
-   * Obtiene todas las películas.
-   * Se listan todas las películas registradas.
+   * obtiene todas las peliculas
+   * lista todas las peliculas registradas
    */
   static async getMovies(req: Request, res: Response): Promise<void> {
     try {
@@ -64,7 +64,7 @@ static async createMovie(req: Request, res: Response): Promise<void> {
   }
 
   /**
-   * Obtiene los detalles de una película a partir de su ID.
+   * obtiene los detalles de una pelicula a partir de su ID
    */
   static async getMovieDetails(req: Request, res: Response): Promise<void> {
     try {
@@ -88,8 +88,8 @@ static async createMovie(req: Request, res: Response): Promise<void> {
   }
 
   /**
-   * Actualiza la información de una película.
-   * Permite modificar los campos: title, description, duration, rating y posterurl.
+   * actualiza la informacion de una pelicula
+   * prmite modificar los campos: title, description, duration, rating y posterurl
    */
   static async updateMovie(req: Request, res: Response): Promise<void> {
     try {
@@ -135,7 +135,7 @@ static async createMovie(req: Request, res: Response): Promise<void> {
   }
 
   /**
-   * Elimina una película a partir de su ID.
+   * elimina una película a partir de su ID
    */
   static async deleteMovie(req: Request, res: Response): Promise<void> {
     try {

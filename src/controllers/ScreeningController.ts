@@ -4,8 +4,8 @@ import {parse} from 'date-fns';
 
 export class ScreeningController {
   /**
-   * Crea un nuevo screening.
-   * Se esperan en el body: movieId, roomId, startTime, endTime y price.
+   * Crea un nuevo screening
+   * se esperan en el body: movieId, roomId, startTime, endTime y price
    */
   static async createScreening(req: Request, res: Response): Promise<void> {
     try {
@@ -34,7 +34,7 @@ export class ScreeningController {
   }
 
   /**
-   * Obtiene todas las funciones (screenings).
+   * obtiene todas las funciones 
    */
   static async getScreenings(req: Request, res: Response): Promise<void> {
     try {
@@ -47,7 +47,7 @@ export class ScreeningController {
   }
 
   /**
-   * Obtiene los detalles de un screening a partir de su ID.
+   * obtiene los detalles de un screening a partir de su ID
    */
   static async getScreeningById(req: Request, res: Response): Promise<void> {
     try {
@@ -69,7 +69,7 @@ export class ScreeningController {
   }
 
   /**
-   * Actualiza la información de un screening.
+   * actualiza la info de un screening
    */
   static async updateScreening(req: Request, res: Response): Promise<void> {
     try {
@@ -100,7 +100,7 @@ export class ScreeningController {
   }
 
   /**
-   * Elimina un screening a partir de su ID.
+   * elimina un screening a partir de su ID
    */
   static async deleteScreening(req: Request, res: Response): Promise<void> {
     try {

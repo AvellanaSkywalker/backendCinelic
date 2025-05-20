@@ -1,4 +1,3 @@
-
 import { transport } from "../config/nodemailer";
 
 type BookingConfirmationEmailType = {
@@ -18,13 +17,13 @@ type BookingCancellationEmailType = {
 
 export class BookingEmail {
   /**
-   * Envia el correo de confirmación de reserva con la siguiente información:
-   * - Datos del usuario.
-   * - Detalles de la película (título, fecha, hora y sala).
-   * - Asientos seleccionados.
-   * - Precio total.
-   * - Folio de reserva.
-   * - Advertencia sobre el límite de 20 minutos para pagar.
+   * Envia el correo de confirmacion de reserva con lo siguiente
+   *  datos del usuario
+   *  detalles de la pelicula (titulo, fecha, hora y sala).
+   *  asientos seleccionados
+   *  precio total
+   *  folio de reserva
+   *  advertencia sobre el limite de 20 minutos para pagar
    */
   static async sendBookingConfirmation({
     user,
@@ -40,7 +39,7 @@ export class BookingEmail {
       subject: "Confirmación de Reserva - CineClic",
       html: `
         <h1>Hola ${user.name}, tu reserva ha sido confirmada</h1>
-        <p>A continuación se muestran los detalles de tu reserva:</p>
+        <p>Detalles de tu reserva:</p>
         <ul>
           <li><strong>Película:</strong> ${movie.title}</li>
           <li><strong>Fecha:</strong> ${movie.date}</li>
@@ -53,14 +52,14 @@ export class BookingEmail {
         <p>${message}</p>
       `
     });
-    console.log(`Correo de confirmación enviado a ${user.email}`);
+    console.log(`Correo de confirmacion enviado a ${user.email}`);
   }
 
   /**
-   * Envía el correo de cancelación de reserva con la siguiente información:
-   * - Nombre del usuario.
-   * - Folio de la reserva.
-   * - Mensaje de cancelación.
+   * Envia el correo de cancelacion de reserva con lo siguiente
+   *  nombre del usuario
+   *  folio de la reserva
+   *  mensaje de cancelacipn
    */
   static async sendBookingCancellation({
     user,
@@ -79,6 +78,6 @@ export class BookingEmail {
         <p>Si tienes alguna duda, contáctanos.</p>
       `
     });
-    console.log(`Correo de cancelación enviado a ${user.email} para la reserva ${folio}`);
+    console.log(`Correo de cancelacion enviado a ${user.email} para la reserva ${folio}`);
   }
 }

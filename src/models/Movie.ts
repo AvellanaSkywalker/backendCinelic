@@ -1,10 +1,8 @@
-// src/models/Movie.ts
 import { Table, Column, Model, DataType, HasMany } from 'sequelize-typescript';
 import Screening from './Screening';
 
 @Table({
   tableName: 'movies',
-  timestamps: true // Genera automáticamente createdAt y updatedAt
 })
 export class Movie extends Model<Movie> {
   @Column({

@@ -1,17 +1,16 @@
-// src/controllers/RoomController.ts
 import { Request, Response } from "express";
 import Room from "../models/Room";
 
 export class RoomController {
   /**
-   * Crea una nueva sala.
-   * Se esperan en el body: name (string), capacity (number, opcional) y layout (number).
+   * Crea una nueva sala
+   * espera en el body: name string, capacity number, opcional y layout number
    */
   static async createRoom(req: Request, res: Response): Promise<void> {
     try {
 
       const { name, capacity, layout } = req.body;
-      // Se asume que name y layout son obligatorios.
+      //  name y layout son obligatorios
       const parsedLayout = layout;
 
       const newRoom = await Room.create({
@@ -27,7 +26,7 @@ export class RoomController {
   }
 
   /**
-   * Obtiene todas las salas.
+   * obtiene todas las salas
    */
   static async getRooms(req: Request, res: Response): Promise<void> {
     try {
@@ -40,7 +39,7 @@ export class RoomController {
   }
 
   /**
-   * Obtiene los detalles de una sala a partir de su ID.
+   * obtiene los detalles de una sala a partir de su ID
    */
   static async getRoomById(req: Request, res: Response): Promise<void> {
     try {
@@ -62,8 +61,8 @@ export class RoomController {
   }
 
   /**
-   * Actualiza la información de una sala.
-   * Permite modificar: name, capacity y layout.
+   * actualiza la informacion de una sala
+   * permite modificar: name, capacity y layout
    */
   static async updateRoom(req: Request, res: Response): Promise<void> {
     try {
@@ -90,7 +89,7 @@ export class RoomController {
   }
 
   /**
-   * Elimina una sala a partir de su ID.
+   * elimina una sala a partir de su ID
    */
   static async deleteRoom(req: Request, res: Response): Promise<void> {
     try {

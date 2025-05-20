@@ -11,37 +11,37 @@ export class AuthController {
     try {
       const { name, email, password, role } = req.body;
 
-      // No se permite registrar administradores desde este endpoint.
+      // no permite registrar administradores desde este endpoint.
       if (role && role.toLowerCase() === "admin") {
         res.status(403).json({ error: "No se permite registrar un admin a través de esta ruta." });
         return;
       }
 
-      // Verificar si el email ya existe.
+      // Verifica si el email ya existe
       const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {
         res.status(400).json({ error: "El email ya se encuentra registrado." });
         return;
       }
 
-      // Hashear la contraseña para almacenarla de forma segura.
+      // hash de la contrasenia para almacenar en la base de datos
       const hashedPassword = await hashPassword(password);
       const user = await User.create({
         name,
         email,
         password: hashedPassword,
-        role: "user" // Fuerza siempre role "user"
+        role: "user" // Fuerza siempre el role a user
       });
 
       if(!process.env.JWT_SECRET){
         throw new Error("la variable esta configurada")
       }
 
-      // Generar un token de confirmación (válido por 24h) para enviar por email (opcional).
+      // gnerar un token de confirmacion vslido por 24h para enviar por email
       console.log("JWT_SECRET en generación:", process.env.JWT_SECRET);
       const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "24h" });
 
-      // Enviar email de confirmación (asegúrate de que AuthEmail esté correctamente configurado).
+      // Envia email de confirmacin 
       await AuthEmail.sendConfirmationEmail({ name, email, token });
 
       res.status(201).json({ message: "Cuenta creada correctamente. Revisa tu correo para confirmar la cuenta.", user });
@@ -53,7 +53,7 @@ export class AuthController {
     }
   }
 
-  // CONFIRMACIÓN DE CUENTA VIA TOKEN
+  // CONFIRMACION DE CUENTA VIA TOKEN
 static async confirmAccountByLink(req: Request, res: Response): Promise<void> {
     try {
         const {token} = req.params
@@ -89,7 +89,7 @@ static async confirmAccountByLink(req: Request, res: Response): Promise<void> {
     }
 }
 
-  // INICIO DE SESIÓN
+  // INICIO DE SESION
 static async login(req: Request, res: Response): Promise<void> {
     try {
       const { email, password } = req.body;
@@ -105,7 +105,7 @@ static async login(req: Request, res: Response): Promise<void> {
         return;
       }
 
-      // Validación extra para administradores
+      // Validacion extra para administradores
       if (user.role === "admin" && !user.email.endsWith("@cineclic.ad.com")) {
         res.status(403).json({ error: "Acceso restringido, el email admin no cumple con el dominio requerido." });
         return;
@@ -117,7 +117,7 @@ static async login(req: Request, res: Response): Promise<void> {
         return;
       }
 
-      // Generar el token JWT.
+      // Genera el token JWT
       const token = generateJWT(user.id.toString());
 
       res.status(200).json({ message: "Inicio de sesión exitoso.", token });
@@ -129,7 +129,7 @@ static async login(req: Request, res: Response): Promise<void> {
     }
 }
 
-  // ENVÍO DE EMAIL PARA RECUPERACIÓN DE CONTRASEÑA
+  // ENVIO DE EMAIL PARA RECUPERACION DE CONTRASENIA
   static async forgotPassword(req: Request, res: Response): Promise<void> {
     try {
       const { email } = req.body;
@@ -141,7 +141,7 @@ static async login(req: Request, res: Response): Promise<void> {
 
       const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, { expiresIn: "1h" });
 
-      // Usamos la función centralizada en `AuthEmail`
+      // Usamos la funcion centralizada en AuthEmail
       await AuthEmail.sendPasswordResetToken({ name: user.name, email: user.email, token });
 
       res.json({ message: "Email de recuperación enviado" });
@@ -164,13 +164,13 @@ static async login(req: Request, res: Response): Promise<void> {
             throw new Error("JWT_SECRET no configurado.");
         }
 
-        // Verificar token
+        // verifica token
         const decoded = jwt.verify(token, process.env.JWT_SECRET) as { id: number };
 
-        // Hashear nueva contraseña
+        // hashea nueva contrasenia
         const hashedPassword = await hashPassword(newPassword);
 
-        // Actualizar en DB
+        // Actualiza en DB
         await User.update(
             { password: hashedPassword },
             { where: { id: decoded.id } }

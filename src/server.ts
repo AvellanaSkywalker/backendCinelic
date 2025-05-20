@@ -75,28 +75,28 @@ cron.schedule('*/15 * * * *', async () => {
   console.log("Reservas afectadas:", canceledBookings.map(b => b.id));
 });
 
-// Integramos Socket.io al servidor HTTP
+// Socket.io al servidor 
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: '*' // Configura los orígenes permitidos según tu entorno
+    origin: '*' // configura los origenes permitidos 
   }
 });
 
 io.on('connection', (socket) => {
   console.log(colors.green(`Cliente conectado: ${socket.id}`));
 
-  // Evento cuando un usuario selecciona un asiento
+  // evento cuando un usuario selecciona un asiento
   socket.on('seat:select', (data) => {
     // data puede ser un objeto { screeningId, seat, userId }
     console.log(`Asiento ${data.seat} seleccionado para el screening ${data.screeningId}`, data);
-    // Se notifica a todos los demás clientes que este asiento está en "proceso" de selección
+    // se notifica a todos los demas clientes que este asiento esta en "proceso" de seleccion
     socket.broadcast.emit(`seat:update:${data.screeningId}`, {
       seat: data.seat,
       state: 'in_process'
     });
   });
 
-  // Evento cuando un usuario deselecciona un asiento
+  // evento cuando un usuario deselecciona un asiento
   socket.on('seat:deselect', (data) => {
     console.log(`Asiento ${data.seat} deseleccionado para el screening ${data.screeningId}`, data);
     socket.broadcast.emit(`seat:update:${data.screeningId}`, {
@@ -105,7 +105,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Puedes agregar otros eventos, como confirmación de selección o bloqueo de asientos, según lo necesites.
+  
     const PORT = process.env.PORT || 3000;
     httpServer.listen(PORT, () => {
     console.log(colors.blue.bold(`Servidor corriendo en http://localhost:${PORT}`));

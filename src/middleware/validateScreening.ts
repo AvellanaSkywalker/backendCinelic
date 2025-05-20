@@ -1,4 +1,3 @@
-// src/middleware/validateScreening.ts
 import { Request, Response, NextFunction } from 'express';
 
 export const validateScreening = (req: Request, res: Response, next: NextFunction) => {

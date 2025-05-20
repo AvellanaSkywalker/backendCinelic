@@ -6,19 +6,19 @@ import { validateMovie } from "../middleware/validateMovie";
 
 const movieRouter = Router();
 
-// Crear una nueva película
+// crea una nueva pelicula
 movieRouter.post('/', authenticate, upload.single('image'), validateMovie, MovieController.createMovie);
 
-// Listar todas las películas (o activas, según lo implementado)
+// lista todas las peliculas activas 
 movieRouter.get('/', authenticate, MovieController.getMovies);
 
-// Obtener detalles de una película a partir de su ID
+// obtiene detalles de una pelicula a partir de su ID
 movieRouter.get('/:movieId', authenticate, MovieController.getMovieDetails);
 
-// Actualizar una película (usando el ID de la película enviado en los parámetros)
+// actualiza una pelicula usando el ID de la pelicula
 movieRouter.put('/:movieId', authenticate, upload.single('image'), MovieController.updateMovie);
 
-// Eliminar (destruir) una película a partir de su ID
+// eliminar una pelicula a partir de su ID
 movieRouter.delete('/:movieId', authenticate, MovieController.deleteMovie);
 
 export default movieRouter;
