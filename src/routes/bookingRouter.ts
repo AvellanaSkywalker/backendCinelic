@@ -1,4 +1,3 @@
-// src/routes/booking.ts
 import { Router } from 'express';
 import { BookingController } from '../controllers/BookingController';
 import { authenticate } from '../middleware/auth';
@@ -11,10 +10,10 @@ bookingRouter.post('/create', authenticate, validateBooking, BookingController.c
 
 // Ruta para cancelar una reserva: se requiere autenticación.
 // El parámetro `bookingId` se pasa en la URL.
-bookingRouter.delete('/:bookingId/cancel', authenticate, BookingController.cancelBooking);
+bookingRouter.patch('/:bookingId/cancel', authenticate, BookingController.cancelBooking);
 
-// Rutas adicionales según tu implementación:
 bookingRouter.get('/user', authenticate, BookingController.getUserBookings); // Ejemplo: obtener reservas del usuario autenticado.
+
 bookingRouter.get('/folio/:folio', authenticate, BookingController.getBookingByFolio);
 
 export default bookingRouter;

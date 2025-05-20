@@ -9,12 +9,15 @@ export class RoomController {
    */
   static async createRoom(req: Request, res: Response): Promise<void> {
     try {
+
       const { name, capacity, layout } = req.body;
       // Se asume que name y layout son obligatorios.
+      const parsedLayout = layout;
+
       const newRoom = await Room.create({
         name,
         capacity: capacity !== undefined ? capacity : null,
-        layout
+        layout: parsedLayout,
       });
       res.status(201).json({ message: "Sala creada exitosamente.", room: newRoom });
     } catch (error) {

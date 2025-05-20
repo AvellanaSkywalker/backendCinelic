@@ -9,12 +9,16 @@ import authRouter from './routes/authRouter'
 import roomRouter from './routes/roomRouter'
 import bookingRouter from './routes/bookingRouter'
 import movieRouter from './routes/movieRouter'
-
+import screeningRouter from './routes/screeningRouter';
+import cron from 'node-cron';
+import {Op} from 'sequelize';
+import Booking from './models/Booking'
+import Screening from './models/Screening'
 
 async function connectDB() {
     try{
         await db.authenticate()
-        await db.sync({force: true})
+        await db.sync({alter: true})
         console.log(colors.blue.bold('conexion exitosa a DB'))
         
     }catch (error){
@@ -38,7 +42,38 @@ app.use('/api/bookings', bookingRouter);
 
 app.use('/api/movies', movieRouter);
 
+app.use('/api/screening', screeningRouter);
+
 const httpServer = createServer(app);
+
+cron.schedule('*/15 * * * *', async () => {
+  console.log("Revisando reservas sin pago antes de la función...");
+
+  const now = new Date();
+  const limitTime = new Date(now.getTime() + 20 * 60 * 1000); // 20 minutos en el futuro
+
+  const updatedCount = await Booking.update(
+    { status: "CANCELADA" },
+    {
+      where: {
+        status: "ACTIVA",
+        screeningId: {
+          [Op.in]: (
+            await Screening.findAll({
+              attributes: ["id"],
+              where: { startTime: { [Op.lt]: limitTime } },
+            })
+          ).map(s => s.id)
+        }
+      }
+    }
+  );
+
+  console.log(`Reservas canceladas automáticamente: ${updatedCount}`);
+
+  const canceledBookings = await Booking.findAll({ where: { status: "CANCELADA" } });
+  console.log("Reservas afectadas:", canceledBookings.map(b => b.id));
+});
 
 // Integramos Socket.io al servidor HTTP
 const io = new SocketIOServer(httpServer, {

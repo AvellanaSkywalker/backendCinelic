@@ -1,0 +1,13 @@
+{
+  "rows": ["A", "B", "C", "D", "E", "F", "G"],
+  "columns": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+  "seats": {
+    "A": { "1": "available", "2": "available", "3": "available", "4": "available", "5": "available", "6": "available", "7": "available", "8": "available", "9": "available","10": "available", "11": "available", "12": "available", "13": "available" },
+    "B": { "1": "available", "2": "available", "3": "available", "4": "available", "5": "available", "6": "available", "7": "available", "8": "available", "9": "available","10": "available", "11": "available", "12": "available", "13": "available" },
+    "C": { "1": "available", "2": "available", "3": "available", "4": "available", "5": "available", "6": "available", "7": "available", "8": "available", "9": "available","10": "available", "11": "available", "12": "available", "13": "available" },
+    "D": { "1": "available", "2": "available", "3": "available", "4": "available", "5": "available", "6": "available", "7": "available", "8": "available", "9": "available","10": "available", "11": "available", "12": "available", "13": "available" },
+    "E": { "1": "available", "2": "available", "3": "available", "4": "available", "5": "available", "6": "available", "7": "available", "8": "available", "9": "available","10": "available", "11": "available", "12": "available", "13": "available" },
+    "F": { "1": "available", "2": "available", "3": "available", "4": "available", "5": "available", "6": "available", "7": "available", "8": "available", "9": "available","10": "available", "11": "available", "12": "available", "13": "available" },
+    "G": { "1": "available", "2": "available", "3": "available", "4": "available", "5": "available", "6": "available", "7": "available", "8": "available", "9": "available","10": "available", "11": "available", "12": "available", "13": "available" }
+  }
+}

@@ -1,4 +1,3 @@
-// src/middleware/validateBooking.ts
 import { Request, Response, NextFunction } from 'express';
 
 export const validateBooking = (req: Request, res: Response, next: NextFunction) => {

@@ -18,7 +18,7 @@ type BookingCancellationEmailType = {
 
 export class BookingEmail {
   /**
-   * Envía el correo de confirmación de reserva con la siguiente información:
+   * Envia el correo de confirmación de reserva con la siguiente información:
    * - Datos del usuario.
    * - Detalles de la película (título, fecha, hora y sala).
    * - Asientos seleccionados.

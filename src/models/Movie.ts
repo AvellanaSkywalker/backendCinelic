@@ -11,36 +11,36 @@ export class Movie extends Model<Movie> {
     type: DataType.STRING,
     allowNull: false
   })
-  public title: string;
+  declare title: string;
 
   @Column({
     type: DataType.TEXT,
     allowNull: true
   })
-  public description: string | null;
+  declare description: string | null;
 
   @Column({
     type: DataType.INTEGER,
     allowNull: false
   })
-  public duration: number; // Duración en minutos
+  declare duration: number; // Duración en minutos
 
   @Column({
     type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0.0
   })
-  public rating: number;
+  declare rating: number;
 
   @Column({
     type: DataType.STRING,
     allowNull: true
   })
-  public posterurl: string | null;
+  declare posterurl: string | null;
 
   // Relación: Una película puede tener varios screenings asociados.
   @HasMany(() => Screening)
-  public screenings: Screening[];
+  declare screenings: Screening[];
 }
 
 export default Movie;

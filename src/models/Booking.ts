@@ -29,7 +29,7 @@ export default class Booking extends Model<Booking> {
     type: DataType.JSON,
     allowNull: false
   })
-  declare seats: string[]; // Arreglo de asientos seleccionados
+  declare seats: {row: string, column: string}[]; // Arreglo de asientos seleccionados
 
   @ForeignKey(() => User)
   @Column({

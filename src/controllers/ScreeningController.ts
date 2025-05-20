@@ -1,6 +1,6 @@
-// src/controllers/ScreeningController.ts
 import { Request, Response } from 'express';
 import Screening from '../models/Screening';
+import {parse} from 'date-fns';
 
 export class ScreeningController {
   /**
@@ -9,17 +9,20 @@ export class ScreeningController {
    */
   static async createScreening(req: Request, res: Response): Promise<void> {
     try {
-      const { movieId, roomId, startTime, endTime, price } = req.body;
-      if (!movieId || !roomId || !startTime || !endTime || price === undefined) {
+      const { movieId, roomId, date, startTime, endTime, price } = req.body;
+      if (!movieId || !roomId || !date || !startTime || !endTime || price === undefined) {
         res.status(400).json({ error: 'Faltan datos obligatorios: movieId, roomId, startTime, endTime y price.' });
         return;
       }
 
+      const startDateTime = `${date} ${startTime}`;
+      const endDateTime = `${date} ${endTime}`;
+
       const screening = await Screening.create({
         movieId,
         roomId,
-        startTime,
-        endTime,
+        startTime: parse(startDateTime, 'yyyy-MM-dd hh:mm a', new Date()),
+        endTime: parse(endDateTime, 'yyyy-MM-dd hh:mm a', new Date()),
         price,
       });
 
