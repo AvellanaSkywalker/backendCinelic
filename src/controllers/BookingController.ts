@@ -39,6 +39,12 @@ export class BookingController {
       const user = await User.findByPk(userId);
       
       const screening = await Screening.findByPk(screeningId, {raw: true});
+
+      //bloquea reservas para funciones pasadas
+      if(!screening || new Date(screening.startTime) < new Date()) {
+        res.status(400).json({ error: "La proyección no existe o ya ha comenzado" });
+        return;
+      }
       
       const movie = await Movie.findByPk(screening?.movieId);
 
@@ -53,15 +59,15 @@ export class BookingController {
        // valida disponibilidad de
       const layout = room.layout as any;
       for(const { row, column } of seats) {
-        if (!layout.seats || !layout.seats[row] || !layout.seats[row][column]) {
+        if (!layout.seats[row]?.[column] || layout.seats[row][column] === "occupied" || layout.seats[row][column] === "selected") {
           res.status(400).json({ error: `El asiento ${row}${column} no existe` });
           return;
         }
-        
-        if(layout.seats[row][column] === "occupied" || layout.seats[row][column] === "selected") {
-          res.status(400).json({ error: `El asiento ${row}${column} ya está ocupado` });
-          return;
-        } 
+      }
+
+      if (seats.length > 5) {
+        res.status(400).json({ error: "No puedes reservar más de 5 asientos a la vez." });
+        return;
       }
 
        // Generar folio y fecha de reserva
@@ -77,6 +83,7 @@ export class BookingController {
         userId,
         screeningId,
       });
+
 
       // Actualizar el layout de la sala
       seats.forEach(({ row, column }) => { 
@@ -118,6 +125,12 @@ export class BookingController {
     try {
       const { bookingId } = req.params;
       const { confirm} = req.body;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({ error: "Usuario no autenticado." });
+        return;
+      }
 
       if (!bookingId) {
         res.status(400).json({ error: "ID de reserva es requerido." });
@@ -125,7 +138,8 @@ export class BookingController {
       }
 
       //busca reserva por id
-      const booking = await Booking.findByPk(bookingId);
+      const booking = await Booking.findOne({where: {id: bookingId, userId } });
+      
       if (!booking) {
         res.status(404).json({ error: "Reserva no encontrada." });
         return;
@@ -214,7 +228,8 @@ export class BookingController {
         return;
       }
 
-      const booking = await Booking.findOne({ where: { folio } });
+      const booking = await Booking.findOne({ where: { folio, userId: req.user.id } });
+     
       if (!booking) {
         res.status(404).json({ error: "Reserva no encontrada para el folio proporcionado." });
         return;

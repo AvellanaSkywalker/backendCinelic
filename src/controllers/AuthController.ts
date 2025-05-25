@@ -56,38 +56,55 @@ export class AuthController {
   // CONFIRMACION DE CUENTA VIA TOKEN
 static async confirmAccountByLink(req: Request, res: Response): Promise<void> {
     try {
-        const {token} = req.params
+        const { token } = req.params;
 
-        if(!process.env.JWT_SECRET){//jhj
-        throw new Error("la variable esta configurada")
+        if (!process.env.JWT_SECRET) {
+            throw new Error("la variable esta configurada");
         }
 
         if (!token) {
+
             res.status(400).json({ error: "Token no proporcionado." });
             return;
         }
 
-        console.log('token recibido:', token)
-        console.log('JWT_SECRET en verificacion:', process.env.JWT_SECRET);
+        console.log("Token recibido:", req.params.token);
+        console.log("JWT_SECRET en verificación:", process.env.JWT_SECRET);
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET) as {id:number}
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as { id: number };
+        console.log("ID decodificado:", decoded.id);
 
-        await User.update({isVerified: true}, {where: {id:decoded.id}})
+        const user = await User.findOne({ where: { id: decoded.id } });
 
-        res.json({message: 'cuenta confirmada exitosamente'})
+        if (!user) {
+            res.status(400).json({ error: "Usuario no encontrado." });
+            return;
+        }
+
+        const [updatedRows] = await User.update({ isVerified: true }, { where: { id: decoded.id } });
+
+        if (updatedRows === 0) {
+            res.status(400).json({ error: "La actualización no se realizó correctamente." });
+            return;
+        }
+
+        const updatedUser = await User.findOne({ where: { id: decoded.id } });
+        console.log("Estado actualizado en la BD:", updatedUser?.isVerified);
+
+        res.json({ message: "Cuenta confirmada exitosamente" });
     } catch (error) {
         console.error("Error en confirmAccountByLink:", error);
 
-        if(error instanceof jwt.TokenExpiredError){
-          res.status(400).json({error: "token expirado"})
-        }else if(error instanceof jwt.JsonWebTokenError){
-          res.status(400).json({error: "token invalido"})
-        }else{
-          res.status(500).json({ error: "Error al confirmar la cuenta." });
+        if (error instanceof jwt.TokenExpiredError) {
+            res.status(400).json({ error: "Token expirado" });
+        } else if (error instanceof jwt.JsonWebTokenError) {
+            res.status(400).json({ error: "Token inválido" });
+        } else {
+            res.status(500).json({ error: "Error al confirmar la cuenta." });
         }
-        
     }
 }
+
 
   // INICIO DE SESION
 static async login(req: Request, res: Response): Promise<void> {
@@ -120,7 +137,10 @@ static async login(req: Request, res: Response): Promise<void> {
       // Genera el token JWT
       const token = generateJWT(user.id.toString());
 
-      res.status(200).json({ message: "Inicio de sesión exitoso.", token });
+      res.status(200).json({ message: "Inicio de sesión exitoso.", 
+        token,
+        user:{ id: user.id, name: user.name, email: user.email},
+      });
       return;
     } catch (error) {
       console.error(`Error en login (${req.body.email}):`, error);
@@ -154,18 +174,26 @@ static async login(req: Request, res: Response): Promise<void> {
   static async resetPassword(req: Request, res: Response): Promise<void> {
     try {
         const { token, newPassword, confirmPassword } = req.body;
+        console.log("Body recibido en resetPassword:", req.body);
 
         if(newPassword !== confirmPassword){
           res.status(400).json({error: "las contrasenias no coinciden"})
+          console.log("Nueva contraseña:", newPassword);
+          console.log("Confirmación de contraseña:", confirmPassword);
+
           return;
         }
 
         if (!process.env.JWT_SECRET) {
+          console.log("Token recibido:", token);
+
             throw new Error("JWT_SECRET no configurado.");
         }
 
         // verifica token
         const decoded = jwt.verify(token, process.env.JWT_SECRET) as { id: number };
+        console.log("Token decodificado:", decoded);
+
 
         // hashea nueva contrasenia
         const hashedPassword = await hashPassword(newPassword);
@@ -181,8 +209,12 @@ static async login(req: Request, res: Response): Promise<void> {
         console.error("Error en resetPassword:", error);
 
         if (error instanceof jwt.TokenExpiredError) {
+          console.error("Error en resetPassword:", error);
+
             res.status(400).json({ error: "El enlace ha expirado." });
         } else if (error instanceof jwt.JsonWebTokenError) {
+          console.error("Error en resetPassword:", error);
+
             res.status(400).json({ error: "Token inválido." });
         } else {
             res.status(500).json({ error: "Error al actualizar la contraseña." });

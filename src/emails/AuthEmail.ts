@@ -9,12 +9,11 @@ type EmailType = {
 export class AuthEmail {
     // Envia email de confirmacion de cuenta
 static async sendConfirmationEmail({ name, email, token }: EmailType) {
-    if (!process.env.BACKEND_URL) {
-        throw new Error("BACKEND_URL no está definido en las variables de entorno.");
+    if (!process.env.FRONTEND_URL) {
+        throw new Error("NEXT_PUBLIC_FRONTEND_URL no está definido en las variables de entorno.");
     }
 
-    const confirmUrl = `${process.env.BACKEND_URL}/api/auth/confirm/${token}`;
-    console.log("Enlace de confirmación generado:", confirmUrl); // para debuggear
+    const confirmUrl = `${process.env.FRONTEND_URL}/verification?token=${token}`;
 
     await transport.sendMail({
         from: "CineClic <no-reply@cineclic.com>",
@@ -24,26 +23,29 @@ static async sendConfirmationEmail({ name, email, token }: EmailType) {
             <h1>¡Gracias por registrarte, ${name}!</h1>
             <p>Confirma tu cuenta haciendo clic en el siguiente enlace:</p>
             <a href="${confirmUrl}" target="_blank">Confirmar mi cuenta</a>
-            <p>Si no solicitaste este registro, puedes ignorar este mensaje.</p>
         `,
     });
 }
 
-    // envia email de recuperacion de contrasenia
-    static async sendPasswordResetToken({ name, email, token }: EmailType) {
-        const resetUrl = `${process.env.BACKEND_URL}/api/auth/reset-password/${token}`;
-
-        await transport.sendMail({
-            from: "CineClic <admin@cineclic.com>",
-            to: email,
-            subject: "CineClic - RESTABLECE TU PASSWORD",
-            html: `
-                <p>Hola, ${name}, has solicitado restablecer tu contraseña en CineClic.</p>
-                <p>Visita el siguiente enlace:</p>
-                <a href="${resetUrl}" target="_blank">REESTABLECER PASSWORD</a>
-            `,
-        });
-
-        console.log(`Mensaje de recuperación de contraseña enviado a ${email}`);
+static async sendPasswordResetToken({ name, email, token }: EmailType) {
+    if (!process.env.FRONTEND_URL) {
+        throw new Error("NEXT_PUBLIC_FRONTEND_URL no está definido en las variables de entorno.");
     }
+
+    const resetUrl = `${process.env.FRONTEND_URL}/resetPassword?token=${token}`;
+
+    await transport.sendMail({
+        from: "CineClic <admin@cineclic.com>",
+        to: email,
+        subject: "Restablece tu contraseña en CineClic",
+        html: `
+            <p>Hola, ${name}, has solicitado restablecer tu contraseña.</p>
+            <p>Visita el siguiente enlace para cambiar tu contraseña:</p>
+            <a href="${resetUrl}" target="_blank">Restablecer contraseña</a>
+        `,
+    });
+
+    console.log(`Correo de recuperación enviado a ${email}`);
+}
+
 }
