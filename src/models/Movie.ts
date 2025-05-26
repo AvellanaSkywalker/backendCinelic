@@ -36,6 +36,13 @@ export class Movie extends Model<Movie> {
   })
   declare posterurl: string | null;
 
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'public_id'
+  })
+  declare publicId: string | null;
+
   // Relación: Una película puede tener varios screenings asociados.
   @HasMany(() => Screening)
   declare screenings: Screening[];

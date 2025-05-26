@@ -1,13 +1,13 @@
-import { Router } from 'express';
-import upload from '../middleware/multer';
+import { Router, Request, Response, NextFunction } from 'express';
 import { MovieController } from '../controllers/MovieController';
 import { authenticate } from '../middleware/auth';
 import { validateMovie } from "../middleware/validateMovie";
+import { upload, handleMulterErrors } from '../middleware/multer';
 
 const movieRouter = Router();
 
 // crea una nueva pelicula
-movieRouter.post('/', authenticate, upload.single('image'), validateMovie, MovieController.createMovie);
+movieRouter.post('/', authenticate, upload.single('image'), MovieController.createMovie);
 
 // lista todas las peliculas activas 
 movieRouter.get('/', authenticate, MovieController.getMovies);

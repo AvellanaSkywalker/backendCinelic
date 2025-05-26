@@ -5,6 +5,11 @@ import cloudinary from '../config/cloudinary';
 
 
 export class MovieController {
+
+
+
+// Uso en tu controlador
+
   /**
    * Crea una nueva pelicula
    * Se esperan en el body: title, description, duration, rating, posterurl
@@ -12,36 +17,61 @@ export class MovieController {
    */
 static async createMovie(req: Request, res: Response): Promise<void> {
   try {
+    console.log('Datos recibidos:', req.body);
+    console.log('Archivo recibido:', req.file);
     const { title, description, duration, rating } = req.body;
-    let posterurl: string | null = null;
+    
+    // Validación de datos obligatorios
+    if (!title || !duration || !rating) {
+      const missingFields = [];
+      if (!title) missingFields.push('title');
+      if (!duration) missingFields.push('duration');
+      if (!rating) missingFields.push('rating');
+      res.status(400).json({ error: 'Faltan campos requeridos', missingFields, receivedFields: req.body });
+      return;
+    }
 
-    // validacion de datos obligatorios se considera que title, duration y rating son requeridos
+    let uploadResult = null;
+    
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'movies',
-      });
-      posterurl = result.secure_url;
+      try {
+        uploadResult = await cloudinary.uploader.upload(req.file.path, {
+          folder: 'cineclic/posters',
+          public_id: `poster_${Date.now()}`,
+          transformation: [
+            { width: 500, height: 750, crop: 'fill' },
+            { quality: 'auto:best' }
+          ]
+        });
 
-      // Elimina el archivo de almacenamiento local tras subirlo a cloudinary
-      fs.unlinkSync(req.file.path);
+        // Eliminar archivo temporal
+        if (req.file?.path && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+      } catch (uploadError) {
+        console.error('Error al subir a Cloudinary:', uploadError);
+        if (req.file?.path) fs.unlinkSync(req.file.path);
+        throw new Error('Error al procesar la imagen');
+      }
     }
 
     const newMovie = await Movie.create({
       title,
-      description: description || null,
+      description,
       duration,
       rating,
-      posterurl,
+      posterurl: uploadResult?.secure_url || null,
+      publicId: uploadResult?.public_id || null
     });
 
     res.status(201).json({
       message: 'Película creada exitosamente.',
-      movie: newMovie, // referencia al objeto creado
+      movie: newMovie
     });
   } catch (error) {
     console.error('Error al crear la película:', error);
     res.status(500).json({
-      error: 'Error interno al crear la película.',
+      error: error instanceof Error ? error.message : 'Error interno al crear la película.'
     });
   }
 }
@@ -91,48 +121,66 @@ static async createMovie(req: Request, res: Response): Promise<void> {
    * actualiza la informacion de una pelicula
    * prmite modificar los campos: title, description, duration, rating y posterurl
    */
-  static async updateMovie(req: Request, res: Response): Promise<void> {
-    try {
-      const { movieId } = req.params;
-      if (!movieId) {
-        res.status(400).json({ error: 'Movie ID es requerido.' });
-        return;
+static async updateMovie(req: Request, res: Response): Promise<void> {
+  try {
+    const { movieId } = req.params;
+    const movie = await Movie.findByPk(movieId);
+    
+    if (!movie) {
+      res.status(404).json({ error: 'Película no encontrada' });
+      return;
+    }
+
+    // Actualizar campos básicos
+    const updatableFields = ['title', 'description', 'duration', 'rating'];
+    updatableFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        movie[field] = req.body[field];
       }
-      const movie = await Movie.findByPk(movieId);
-      if (!movie) {
-        res.status(404).json({ error: 'Película no encontrada.' });
-        return;
-      }
+    });
 
-      const { title, description, duration, rating} = req.body;
+    // Manejo de imagen
+    if (req.file) {
+      try {
+        // 1. Eliminar imagen anterior si existe
+        if (movie.publicId) {
+          await cloudinary.uploader.destroy(movie.publicId)
+            .catch(e => console.error('Error al eliminar imagen anterior:', e));
+        }
 
-      if (title !== undefined) movie.title = title;
-      
-      if (description !== undefined) movie.description = description;
-      if (duration !== undefined) movie.duration = duration;
-      if (rating !== undefined) movie.rating = rating;
-
-      if (req.file) {
+        // 2. Subir nueva imagen
         const result = await cloudinary.uploader.upload(req.file.path, {
-          folder: 'movies',
+          folder: 'cineclic/posters',
+          public_id: `poster_${Date.now()}`,
+          transformation: [
+            { width: 500, height: 750, crop: 'fill' },
+            { quality: 'auto:best' }
+          ]
         });
-        movie.posterurl = result.secure_url;
 
+        movie.posterurl = result.secure_url;
+        movie.publicId = result.public_id;
+        
+        // 3. Limpiar archivo temporal
+      if (req.file?.path && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
       }
-
-      await movie.save();
-      res.status(200).json({
-        message: 'Película actualizada exitosamente.',
-        movie,
-      });
-    } catch (error) {
-      console.error('Error al actualizar la película:', error);
-      res.status(500).json({
-        error: 'Error interno al actualizar la película.'
-      });
+      } catch (uploadError) {
+        console.error('Error en Cloudinary:', uploadError);
+        if (req.file?.path) fs.unlinkSync(req.file.path);
+        throw new Error('Error al procesar la imagen');
+      }
     }
+
+    await movie.save();
+    res.json({ message: 'Película actualizada', movie });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Error interno' 
+    });
   }
+}
 
   /**
    * elimina una película a partir de su ID

@@ -1,14 +1,41 @@
+import { storage } from '../config/cloudinary';
 import multer from 'multer';
+import { Request, Response, NextFunction } from 'express';
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // directorio temporal
+// Configuración mejorada
+export const upload = multer({
+  storage,
+  limits: { 
+    fileSize: 5 * 1024 * 1024, // 5MB
+    files: 1 // Solo permitir 1 archivo
   },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE'));
+      // Alternativa para devolver error limpio:
+      // cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE'));
+    }
   }
 });
 
-const upload = multer({ storage });
-
-export default upload;
+// Middleware para manejar errores de Multer
+export const handleMulterErrors = (err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      res.status(400).json({ error: 'La imagen no puede exceder 5MB' });
+      return;
+    }
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      res.status(400).json({ error: 'Solo se permiten archivos de imagen' });
+      return;
+    }
+  } else if (err) {
+    res.status(500).json({ error: 'Error al procesar la imagen' });
+    return;
+  }
+  next();
+};

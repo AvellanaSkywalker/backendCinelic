@@ -15,16 +15,17 @@ export class ScreeningController {
         return;
       }
 
-      const startDateTime = `${date} ${startTime}`;
-      const endDateTime = `${date} ${endTime}`;
+    const screeningStartTime = new Date(`${date}T${startTime}`);
+    const screeningEndTime = new Date(screeningStartTime);
+    screeningEndTime.setMinutes(screeningEndTime.getMinutes() + 120); // +2 horas
 
-      const screening = await Screening.create({
-        movieId,
-        roomId,
-        startTime: parse(startDateTime, 'yyyy-MM-dd hh:mm a', new Date()),
-        endTime: parse(endDateTime, 'yyyy-MM-dd hh:mm a', new Date()),
-        price,
-      });
+    const screening = await Screening.create({
+      movieId,
+      roomId,
+      startTime: screeningStartTime,
+      endTime: screeningEndTime,
+      price: Number(price)
+    });
 
       res.status(201).json({ message: 'Screening creada exitosamente.', screening });
     } catch (error) {

@@ -139,7 +139,7 @@ static async login(req: Request, res: Response): Promise<void> {
 
       res.status(200).json({ message: "Inicio de sesión exitoso.", 
         token,
-        user:{ id: user.id, name: user.name, email: user.email},
+        user:{ id: user.id, name: user.name, email: user.email, role: user.role},
       });
       return;
     } catch (error) {
