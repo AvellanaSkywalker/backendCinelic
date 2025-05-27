@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import fs from 'fs';
 import Movie from '../models/Movie';
+import Screening from '../models/Screening';
 import cloudinary from '../config/cloudinary';
+import { getRepository } from 'typeorm';
 
 
 export class MovieController {
@@ -99,16 +101,26 @@ static async createMovie(req: Request, res: Response): Promise<void> {
   static async getMovieDetails(req: Request, res: Response): Promise<void> {
     try {
       const { movieId } = req.params;
+      
       if (!movieId) {
         res.status(400).json({ error: 'Movie ID es requerido.' });
         return;
       }
-      const movie = await Movie.findByPk(movieId);
+      
+      
+      const movie = await Movie.findOne({
+        where: { id: req.params.movieId},
+        include: [{model: Screening, as: 'screenings'}] // Incluye las relaciones si es necesario
+       });
+       
+       // Si necesitas las relaciones, puedes incluirlas aquí);
       if (!movie) {
         res.status(404).json({ error: 'Película no encontrada.' });
         return;
+      
       }
-      res.status(200).json({ movie });
+     
+    res.status(200).json({ movie });
     } catch (error) {
       console.error('Error al obtener detalles de la película:', error);
       res.status(500).json({
