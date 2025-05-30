@@ -48,6 +48,7 @@ export class RoomController {
         res.status(400).json({ error: "Room ID es requerido." });
         return;
       }
+      
       const room = await Room.findByPk(roomId);
       if (!room) {
         res.status(404).json({ error: "Sala no encontrada." });

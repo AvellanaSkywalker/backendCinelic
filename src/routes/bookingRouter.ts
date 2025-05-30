@@ -6,7 +6,7 @@ import { validateBooking } from '../middleware/validateBooking';
 const bookingRouter = Router();
 
 // ruta para crear una reserva requiere autenticacion y validacion de los datos de entrada
-bookingRouter.post('/create', authenticate, validateBooking, BookingController.createBooking);
+bookingRouter.post('/create', authenticate, BookingController.createBooking);
 
 // ruta para cancelar una reserva requiere autenticacion
 // el bookingId se pasa en la URL.
