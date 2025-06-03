@@ -4,10 +4,10 @@ import User from "../models/User";
 import Screening from "../models/Screening";
 import Movie from "../models/Movie";
 import Room from "../models/Room";
-import { BookingEmail } from "../emails/BookingEmails"; // Archivo con funcion de envio de correo
+import { BookingEmail } from "../emails/BookingEmails"; 
 
 /**
- * funcion auxiliar para generar un folio con el formato XXXX-XXXX
+ * funcion para generar un folio con el formato XXXX-XXXX
  */
 const generateFolio = (): string => {
   const digits = "0123456789";
@@ -56,7 +56,7 @@ export class BookingController {
       }
         console.log("Estructura de layout:", JSON.stringify(room.layout.seats, null, 2));
 
-       // valida disponibilidad de
+       // valida disponibilidad 
       const layout = room.layout as any;
       for(const { row, column } of seats) {
         if (!layout.seats[row]?.[column] || layout.seats[row][column] === "occupied" || layout.seats[row][column] === "selected") {
@@ -70,7 +70,7 @@ export class BookingController {
         return;
       }
 
-       // Generar folio y fecha de reserva
+       // Genera folio y fecha de reserva
       const folio = generateFolio();
       const bookingDate = new Date();
 
@@ -85,7 +85,7 @@ export class BookingController {
       });
 
 
-      // Actualizar el layout de la sala
+      // Actualiza el layout de la sala
       seats.forEach(({ row, column }) => { 
           layout.seats[row][column] = "selected";
       });
@@ -95,7 +95,7 @@ export class BookingController {
       // Calcula precio total
       const totalPrice = parseFloat(screening.price.toString()) * seats.length;
 
-      // **Enviar correo de confirmación**
+      // **Envia correo de confirmación**
       await BookingEmail.sendBookingConfirmation({
         user: { name: user.name, email: user.email },
         movie: {
@@ -121,100 +121,88 @@ export class BookingController {
   /**
    *  Cancela una reserva y libera los asientos
    */
-  static async cancelBooking(req: Request, res: Response): Promise<void> {
-    try {
-      const { bookingId } = req.params;
-      const { confirm} = req.body;
-      const userId = req.user?.id;
+static async cancelBooking(req: Request, res: Response): Promise<void> {
+  try {
+    const { bookingId } = req.params;
+    const { confirm } = req.body;
+    const userId = req.user?.id;
 
-      if (!userId) {
-        res.status(401).json({ error: "Usuario no autenticado." });
-        return;
-      }
+    // Validaciones 
+    if (!userId) res.status(401).json({ error: "Usuario no autenticado." });
+    if (!bookingId) res.status(400).json({ error: "ID de reserva requerido." });
+    if (!confirm) res.status(400).json({ error: "Confirmación requerida." });
 
-      if (!bookingId) {
-        res.status(400).json({ error: "ID de reserva es requerido." });
-        return;
-      }
+    // Busca reserva con relaciones 
+    const booking = await Booking.findOne({
+      where: { id: bookingId, userId },
+      include: [{
+        model: Screening,
+        include: [Room]
+      }]
+    });
 
-      //busca reserva por id
-      const booking = await Booking.findOne({where: {id: bookingId, userId } });
-      
-      if (!booking) {
-        res.status(404).json({ error: "Reserva no encontrada." });
-        return;
-      }
-      
-
-      //pide confirmacion
-      if (!confirm) {
-        res.status(200).json({ 
-          message: 'desea cancelar la reserva?',
-          options: {confirm: true, cancel: false}});
-        return;
-      }
-      //obtiene la sala y la proyeccion
-
-
-      const screening = await Screening.findByPk(booking.screeningId);
-      console.log("Screening encontrado:", screening);
-      console.log("Room ID obtenido:", screening?.roomId);
-      const room = await Room.findByPk(screening?.roomId);
-
-      if (!room) {
-        res.status(500).json({ error: "Error al obtener datos de la sala." });
-        return;
-      }
-
-      // verifica la estructura seats antes de iterar
-      if (!Array.isArray(booking.seats)) {
-        res.status(500).json({ error: "Formato de asientos incorrecto." });
-        return;
-      }
-
-      // Libera los asientos seleccionados
-      const layout = room.layout as any;
-      console.log("Estructura de layout.seats:", JSON.stringify(layout.seats, null, 2));
-      console.log("Intentando liberar asientos:", booking.seats);
-
-      booking.seats.forEach(({ row, column }) => {
-        if(!layout.seats[row] || !layout.seats[row][column]) {
-          console.warn(`Asiento ${row}${column} no encontrado en el layout.`);
-          return;
-        }
-        if (layout.seats[row][column] === "selected") {
-          layout.seats[row][column] = "available";
-        }
-      });
-
-      await Room.update({ layout }, { where: { id: room.id } });
-      console.log("Layout actualizado:", JSON.stringify(layout, null, 2));
-
-      // Cambia el estado de la reserva a "CANCELADA"
-      await booking.update({ status: "CANCELADA"}); 
-
-      //posiblemente eliminar este bloque
-      const user = await User.findByPk(booking.userId);
-      if (!user) {
-       res.status(500).json({ error: "Usuario no encontrado para la reserva." });
-       return;
-      }
-
-
-      // **Enviar correo de cancelación**
-      await BookingEmail.sendBookingCancellation({
-        user: { name: user.name, email: user.email },
-        folio: booking.folio,
-        message: "Tu reserva ha sido cancelada y los asientos han sido liberados."
-      });
-
-      res.status(200).json({ message: "Reserva cancelada y asientos liberados." });
-
-    } catch (error) {
-      console.error("Error en cancelBooking:", error);
-      res.status(500).json({ error: "Error al cancelar la reserva." });
+    if (!booking) res.status(404).json({ error: "Reserva no encontrada." });
+    if (booking.status === "CANCELADA") {
+      res.status(400).json({ error: "La reserva ya está cancelada." });
+      return;
     }
+
+    // Obtiene datos necesarios
+    const screening = booking.screening;
+    const room = screening?.room;
+    
+    if (!room) {
+      res.status(500).json({ error: "Datos de sala no disponibles." });
+    }
+
+    // Libera asientos 
+    const layout = room.layout as any;
+    let seatsUpdated = false;
+
+    booking.seats.forEach(({ row, column }) => {
+      if (layout.seats?.[row]?.[column] === "selected") {
+        layout.seats[row][column] = "available";
+        seatsUpdated = true;
+      }
+    });
+
+    // Actualiza solo si hubo cambios
+    if (seatsUpdated) {
+      await Room.update({ layout }, { where: { id: room.id } });
+    }
+
+    // Actualiza estado de la reserva
+    await booking.update({ status: "CANCELADA" });
+
+    // Envia correo en segundo plano
+    try {
+      const user = await User.findByPk(booking.userId);
+      if (user) {
+        // No espera por el envio de correo
+        BookingEmail.sendBookingCancellation({
+          user: { name: user.name, email: user.email },
+          folio: booking.folio,
+          message: "Tu reserva ha sido cancelada y los asientos han sido liberados."
+        }).catch(emailError => {
+          console.error("Error enviando correo:", emailError);
+        });
+      }
+    } catch (emailError) {
+      console.error("Error obteniendo datos para correo:", emailError);
+    }
+
+    // Respuesta rapida al frontend
+    res.status(200).json({ 
+      message: "Reserva cancelada y asientos liberados.",
+      bookingId: booking.id,
+      newStatus: "CANCELADA"
+    });
+
+  } catch (error) {
+    console.error("Error en cancelBooking:", error);
+    res.status(500).json({ error: "Error al cancelar la reserva." });
   }
+}
 
   /**
    *  obtiene una reserva por folio
@@ -228,7 +216,14 @@ export class BookingController {
         return;
       }
 
-      const booking = await Booking.findOne({ where: { folio, userId: req.user.id } });
+      const booking = await Booking.findOne({ where: { folio, userId: req.user.id },
+        include: [
+          {
+            model: Screening,
+            include: [ Movie, Room]
+          }
+        ],
+      });
      
       if (!booking) {
         res.status(404).json({ error: "Reserva no encontrada para el folio proporcionado." });
@@ -246,24 +241,33 @@ export class BookingController {
   /**
    *  pbtiene todas las reservas de un usuario
    */
-  static async getUserBookings(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.id;
+static async getUserBookings(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.user?.id;
 
-      if (!userId) {
+    if (!userId) {
       res.status(401).json({ error: "Usuario no autenticado." });
       return;
-      }
-
-      // obtiene todas las reservas del usuario
-      const bookings = await Booking.findAll({ where: { userId }, order: [["createdAt", "DESC"]] });
-
-      res.status(200).json({ bookings });
-
-    }catch (error) {
-      console.error("Error en getUserBookings:", error);
-      res.status(500).json({ error: "Error al obtener reservas del usuario." });
     }
+
+    
+    const bookings = await Booking.findAll({
+      where: { userId },
+      order: [["createdAt", "DESC"]],
+      include: [
+        {
+          model: Screening,
+          include: [Movie, Room] 
+        }
+      ]
+    });
+
+    res.status(200).json({ bookings });
+
+  } catch (error) {
+    console.error("Error en getUserBookings:", error);
+    res.status(500).json({ error: "Error al obtener reservas del usuario." });
   }
+}
 
 }

@@ -2,12 +2,12 @@ import { storage } from '../config/cloudinary';
 import multer from 'multer';
 import { Request, Response, NextFunction } from 'express';
 
-// Configuración mejorada
+// Config mejorada
 export const upload = multer({
   storage,
   limits: { 
     fileSize: 5 * 1024 * 1024, // 5MB
-    files: 1 // Solo permitir 1 archivo
+    files: 1 // Solo permite 1 archivo
   },
   fileFilter: (req, file, cb) => {
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -16,13 +16,11 @@ export const upload = multer({
       cb(null, true);
     } else {
       cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE'));
-      // Alternativa para devolver error limpio:
-      // cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE'));
     }
   }
 });
 
-// Middleware para manejar errores de Multer
+//  para manejar errores de Multer
 export const handleMulterErrors = (err: any, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {

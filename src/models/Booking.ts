@@ -1,4 +1,4 @@
-import { Table, Column, Model, DataType, ForeignKey } from "sequelize-typescript";
+import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from "sequelize-typescript";
 import User from "./User";
 import Screening from "./Screening";
 
@@ -45,4 +45,10 @@ export default class Booking extends Model<Booking> {
     allowNull: false
   })
   declare screeningId: number;
+
+  @BelongsTo(() => User)
+  declare user: User;
+
+  @BelongsTo(() => Screening)
+  declare screening: Screening;
 }

@@ -10,7 +10,6 @@ declare global {
     }
 }
 
-// extende la interface Request para agregar la propiedad user
 export interface AuthRequest extends Request {
   user?: any;
 }
@@ -22,7 +21,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
      return;
   }
 
-  //  el token se envia en el formato Bearer <token>
+  //  el token se envia en el formato Bearer 
   const token = authHeader.split(" ")[1];
   if (!token) {
     res.status(401).json({ error: "Token de autenticación ausente" });
@@ -30,7 +29,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   }
 
   try {
-    // verifica el token utilizando el secreto definido en las variables de entorno
+    // verifica el token 
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
     req.user = decoded;
     next();

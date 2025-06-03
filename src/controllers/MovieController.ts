@@ -8,13 +8,9 @@ import { getRepository } from 'typeorm';
 
 export class MovieController {
 
-
-
-// Uso en tu controlador
-
   /**
    * Crea una nueva pelicula
-   * Se esperan en el body: title, description, duration, rating, posterurl
+   * Se espera el title, description, duration, rating, posterurl
    * se puede envoar archivo en el campo image
    */
 static async createMovie(req: Request, res: Response): Promise<void> {
@@ -23,7 +19,7 @@ static async createMovie(req: Request, res: Response): Promise<void> {
     console.log('Archivo recibido:', req.file);
     const { title, description, duration, rating } = req.body;
     
-    // Validación de datos obligatorios
+    // Valida  datos obligatorios
     if (!title || !duration || !rating) {
       const missingFields = [];
       if (!title) missingFields.push('title');
@@ -46,7 +42,7 @@ static async createMovie(req: Request, res: Response): Promise<void> {
           ]
         });
 
-        // Eliminar archivo temporal
+        // Elimina archivo temporal
         if (req.file?.path && fs.existsSync(req.file.path)) {
           fs.unlinkSync(req.file.path);
         }
@@ -110,10 +106,10 @@ static async createMovie(req: Request, res: Response): Promise<void> {
       
       const movie = await Movie.findOne({
         where: { id: req.params.movieId},
-        include: [{model: Screening, as: 'screenings'}] // Incluye las relaciones si es necesario
+        include: [{model: Screening, as: 'screenings'}] 
        });
        
-       // Si necesitas las relaciones, puedes incluirlas aquí);
+
       if (!movie) {
         res.status(404).json({ error: 'Película no encontrada.' });
         return;
@@ -131,7 +127,7 @@ static async createMovie(req: Request, res: Response): Promise<void> {
 
   /**
    * actualiza la informacion de una pelicula
-   * prmite modificar los campos: title, description, duration, rating y posterurl
+   * prmite modificar los campos title, description, duration, rating y posterurl
    */
 static async updateMovie(req: Request, res: Response): Promise<void> {
   try {
@@ -143,7 +139,7 @@ static async updateMovie(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Actualizar campos básicos
+    // Actualiza campos 
     const updatableFields = ['title', 'description', 'duration', 'rating'];
     updatableFields.forEach(field => {
       if (req.body[field] !== undefined) {
@@ -154,13 +150,13 @@ static async updateMovie(req: Request, res: Response): Promise<void> {
     // Manejo de imagen
     if (req.file) {
       try {
-        // 1. Eliminar imagen anterior si existe
+        // Elimina imagen anterior si existe
         if (movie.publicId) {
           await cloudinary.uploader.destroy(movie.publicId)
             .catch(e => console.error('Error al eliminar imagen anterior:', e));
         }
 
-        // 2. Subir nueva imagen
+        //  Sube nueva imagen
         const result = await cloudinary.uploader.upload(req.file.path, {
           folder: 'cineclic/posters',
           public_id: `poster_${Date.now()}`,
@@ -173,7 +169,7 @@ static async updateMovie(req: Request, res: Response): Promise<void> {
         movie.posterurl = result.secure_url;
         movie.publicId = result.public_id;
         
-        // 3. Limpiar archivo temporal
+        // limpia archivo temporal
       if (req.file?.path && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
       }
@@ -195,7 +191,7 @@ static async updateMovie(req: Request, res: Response): Promise<void> {
 }
 
   /**
-   * elimina una película a partir de su ID
+   * elimina una peli a partir de su ID
    */
   static async deleteMovie(req: Request, res: Response): Promise<void> {
     try {

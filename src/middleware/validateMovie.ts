@@ -18,7 +18,7 @@ if (missingFields.length > 0) {
     error: 'Campos faltantes',
     missingFields
   };
-  console.log('Respuesta de error:', errorJson); // <-- Esto lo imprime en la consola
+  console.log('Respuesta de error:', errorJson); 
   res.status(400).json(errorJson);
   return;
 }

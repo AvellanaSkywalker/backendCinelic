@@ -7,8 +7,8 @@ export const validateScreening = (req: Request, res: Response, next: NextFunctio
   if (!movieId) missingFields.push('movieId');
   if (!roomId) missingFields.push('roomId');
   if (!date) missingFields.push('date');
-  if (!startTime) missingFields.push('startTime'); // <-- Cambiado
-  if (!endTime) missingFields.push('endTime');     // <-- Cambiado
+  if (!startTime) missingFields.push('startTime'); 
+  if (!endTime) missingFields.push('endTime');     
   if (price === undefined) missingFields.push('price');
 
   if (missingFields.length > 0) {
@@ -20,7 +20,7 @@ export const validateScreening = (req: Request, res: Response, next: NextFunctio
     return;
   }
 
-  // Validación adicional de tipos
+  // Valida adicional de tipos
   if (isNaN(Number(price))) {
     res.status(400).json({ error: 'Price debe ser un número' });
     return;

@@ -21,7 +21,7 @@ export class Movie extends Model<Movie> {
     type: DataType.INTEGER,
     allowNull: false
   })
-  declare duration: number; // Duración en minutos
+  declare duration: number; 
 
   @Column({
     type: DataType.FLOAT,
@@ -43,7 +43,7 @@ export class Movie extends Model<Movie> {
   })
   declare publicId: string | null;
 
-  // Relación: Una película puede tener varios screenings asociados.
+  //  Una pelicula puede tener varios screenings 
   @HasMany(() => Screening)
   declare screenings: Screening[];
 }

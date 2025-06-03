@@ -1,4 +1,10 @@
-import { transport } from "../config/nodemailer";
+import sgMail from '@sendgrid/mail';
+
+//  la API Key de SendGrid
+if (!process.env.SENDGRID_API_KEY) {
+    throw new Error("SENDGRID_API_KEY no está definido en las variables de entorno.");
+}
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 type BookingConfirmationEmailType = {
   user: { name: string; email: string };
@@ -17,13 +23,7 @@ type BookingCancellationEmailType = {
 
 export class BookingEmail {
   /**
-   * Envia el correo de confirmacion de reserva con lo siguiente
-   *  datos del usuario
-   *  detalles de la pelicula (titulo, fecha, hora y sala).
-   *  asientos seleccionados
-   *  precio total
-   *  folio de reserva
-   *  advertencia sobre el limite de 20 minutos para pagar
+   * Envia el correo de confirmacion de reserva
    */
   static async sendBookingConfirmation({
     user,
@@ -33,51 +33,83 @@ export class BookingEmail {
     folio,
     message
   }: BookingConfirmationEmailType) {
-    await transport.sendMail({
-      from: "CineClic <no-reply@cineclic.com>",
+    const formattedDate = typeof movie.date === 'string' 
+      ? movie.date 
+      : movie.date.toLocaleDateString('es-MX');
+
+    const msg = {
       to: user.email,
+      from: 'CineClic <cinceclic.official@gmail.com>', // Email  en SendGrid
       subject: "Confirmación de Reserva - CineClic",
       html: `
-        <h1>Hola ${user.name}, tu reserva ha sido confirmada</h1>
-        <p>Detalles de tu reserva:</p>
-        <ul>
-          <li><strong>Película:</strong> ${movie.title}</li>
-          <li><strong>Fecha:</strong> ${movie.date}</li>
-          <li><strong>Horario:</strong> ${movie.time}</li>
-          <li><strong>Sala:</strong> ${movie.room}</li>
-          <li><strong>Asientos:</strong> ${seats.join(", ")}</li>
-          <li><strong>Total:</strong> $${totalPrice}</li>
-          <li><strong>Folio:</strong> ${folio}</li>
-        </ul>
-        <p>${message}</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #1a237e;">Hola ${user.name}, tu reserva ha sido confirmada 🎉</h1>
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px;">
+            <h2 style="color: #1a237e;">Detalles de tu reserva:</h2>
+            <ul style="list-style: none; padding: 0;">
+              <li style="margin-bottom: 10px;"><strong>🎬 Película:</strong> ${movie.title}</li>
+              <li style="margin-bottom: 10px;"><strong>📅 Fecha:</strong> ${formattedDate}</li>
+              <li style="margin-bottom: 10px;"><strong>⏰ Horario:</strong> ${movie.time}</li>
+              <li style="margin-bottom: 10px;"><strong>📍 Sala:</strong> ${movie.room}</li>
+              <li style="margin-bottom: 10px;"><strong>💺 Asientos:</strong> ${seats.join(", ")}</li>
+              <li style="margin-bottom: 10px;"><strong>💰 Total:</strong> $${totalPrice.toFixed(2)} MXN</li>
+              <li style="margin-bottom: 10px;"><strong>🔖 Folio:</strong> <code>${folio}</code></li>
+            </ul>
+          </div>
+          <div style="margin-top: 20px; padding: 15px; background-color: #fff8e1; border-left: 4px solid #ffc107;">
+            <p>${message}</p>
+          </div>
+          <p style="margin-top: 20px;">¡Gracias por elegir CineClic! Disfruta de tu película 🍿</p>
+        </div>
       `
-    });
-    console.log(`Correo de confirmacion enviado a ${user.email}`);
+    };
+
+    try {
+      await sgMail.send(msg);
+      console.log(` Correo de confirmación enviado a ${user.email}`);
+    } catch (error) {
+      console.error(' Error enviando email de confirmación:', error);
+      throw new Error("Error al enviar el correo de confirmación");
+    }
   }
 
   /**
-   * Envia el correo de cancelacion de reserva con lo siguiente
-   *  nombre del usuario
-   *  folio de la reserva
-   *  mensaje de cancelacipn
+   * Envia el correo de cancelacion de reserva
    */
   static async sendBookingCancellation({
     user,
     folio,
     message
   }: BookingCancellationEmailType) {
-    await transport.sendMail({
-      from: "CineClic <no-reply@cineclic.com>",
+    const msg = {
       to: user.email,
+      from: 'CineClic <cinceclic.official@gmail.com>', // Email verificado en SendGrid
       subject: "Cancelación de Reserva - CineClic",
       html: `
-        <h1>Reserva Cancelada</h1>
-        <p>Hola ${user.name},</p>
-        <p>Tu reserva con folio <strong>${folio}</strong> ha sido cancelada.</p>
-        <p>${message}</p>
-        <p>Si tienes alguna duda, contáctanos.</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #b71c1c;">Reserva Cancelada</h1>
+          <p>Hola ${user.name},</p>
+          
+          <div style="background-color: #ffebee; padding: 20px; border-radius: 8px; border-left: 4px solid #d32f2f;">
+            <p>Tu reserva con folio <strong><code>${folio}</code></strong> ha sido cancelada.</p>
+            <p>${message}</p>
+          </div>
+          
+          <p style="margin-top: 20px;">Si consideras que esto es un error o necesitas asistencia, por favor contáctanos respondiendo a este correo.</p>
+          
+          <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+            <p>Atentamente,<br>El equipo de CineClic</p>
+          </div>
+        </div>
       `
-    });
-    console.log(`Correo de cancelacion enviado a ${user.email} para la reserva ${folio}`);
+    };
+
+    try {
+      await sgMail.send(msg);
+      console.log(`📧 Correo de cancelación enviado a ${user.email} para la reserva ${folio}`);
+    } catch (error) {
+      console.error('❌ Error enviando email de cancelación:', error);
+      throw new Error("Error al enviar el correo de cancelación");
+    }
   }
 }

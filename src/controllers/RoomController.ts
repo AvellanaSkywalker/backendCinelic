@@ -4,7 +4,7 @@ import Room from "../models/Room";
 export class RoomController {
   /**
    * Crea una nueva sala
-   * espera en el body: name string, capacity number, opcional y layout number
+   * espera el name string, capacity numbery layout number
    */
   static async createRoom(req: Request, res: Response): Promise<void> {
     try {
@@ -63,7 +63,7 @@ export class RoomController {
 
   /**
    * actualiza la informacion de una sala
-   * permite modificar: name, capacity y layout
+   * permite modificar name, capacity y layout
    */
   static async updateRoom(req: Request, res: Response): Promise<void> {
     try {

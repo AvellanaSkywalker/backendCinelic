@@ -5,7 +5,7 @@ import {parse} from 'date-fns';
 export class ScreeningController {
   /**
    * Crea un nuevo screening
-   * se esperan en el body: movieId, roomId, startTime, endTime y price
+   * se espera el movieId, roomId, startTime, endTime y price
    */
   static async createScreening(req: Request, res: Response): Promise<void> {
     try {
@@ -17,7 +17,7 @@ export class ScreeningController {
 
     const screeningStartTime = new Date(`${date}T${startTime}`);
     const screeningEndTime = new Date(screeningStartTime);
-    screeningEndTime.setMinutes(screeningEndTime.getMinutes() + 120); // +2 horas
+    screeningEndTime.setMinutes(screeningEndTime.getMinutes() + 120); 
 
     const screening = await Screening.create({
       movieId,

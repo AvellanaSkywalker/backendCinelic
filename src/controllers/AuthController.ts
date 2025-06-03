@@ -157,11 +157,12 @@ static async login(req: Request, res: Response): Promise<void> {
 
       if (!user) {
         res.status(404).json({ error: "El email no se encuentra registrado" });
+        return;
       }
 
       const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, { expiresIn: "1h" });
 
-      // Usamos la funcion centralizada en AuthEmail
+      //  funcion centralizada en AuthEmail
       await AuthEmail.sendPasswordResetToken({ name: user.name, email: user.email, token });
 
       res.json({ message: "Email de recuperación enviado" });

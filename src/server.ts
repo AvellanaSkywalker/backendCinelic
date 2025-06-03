@@ -3,6 +3,7 @@ import colors from 'colors'
 import morgan from 'morgan'
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
+import { cleanUnverifiedUsers } from '../src/middleware/unverifiedUserCleanup'
 
 import { db } from './config/db'
 import authRouter from './routes/authRouter'
@@ -37,7 +38,7 @@ const app = express()
 
 app.use(morgan('dev'))
 app.use(express.json())
-app.use(cors({ origin: "http://localhost:3000" })); // Cambia esto según tu configuración de CORS
+app.use(cors({ origin: "http://localhost:3000" })); 
 
 app.use('/api/auth', authRouter)
 
@@ -55,7 +56,7 @@ cron.schedule('*/15 * * * *', async () => {
   console.log("Revisando reservas sin pago antes de la función...");
 
   const now = new Date();
-  const limitTime = new Date(now.getTime() + 20 * 60 * 1000); // 20 minutos en el futuro
+  const limitTime = new Date(now.getTime() + 20 * 60 * 1000); // 20 minutos 
 
   const updatedCount = await Booking.update(
     { status: "CANCELADA" },
@@ -80,10 +81,17 @@ cron.schedule('*/15 * * * *', async () => {
   console.log("Reservas afectadas:", canceledBookings.map(b => b.id));
 });
 
+
+//limpieza para usuarios no verificados
+cron.schedule("0 0 * * *", async () => {
+  console.log("Iniciando limpieza de usuarios no verificados...");
+  await cleanUnverifiedUsers();
+});
+
 // Socket.io al servidor 
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: '*' // configura los origenes permitidos 
+    origin: '*' //  origenes permitidos 
   }
 });
 
@@ -95,16 +103,16 @@ io.on('connection', (socket) => {
   // evento cuando un usuario selecciona un asiento
   socket.on('seat:select', async (data) => {
     const { screeningId, seat, userId } = data;
-    // data puede ser un objeto { screeningId, seat, userId }
+    // data puede ser un objeto screeningId, seat, userId 
     console.log(`Asiento ${data.seat} seleccionado para el screening ${data.screeningId}`, data);
     
     const room = await Room.findOne({
       where: { id: screeningId } });
     const layout = room.layout as any;
-    layout.seats[seat.row][seat.column] = { state: "slected", timeStamp: new Date() };
+    layout.seats[seat.row][seat.column] = { state: "selected", timeStamp: new Date() };
     
     await room.update({ layout }, { where: { id: room.id } });
-    // se notifica a todos los demas clientes que este asiento esta en "proceso" de seleccion
+    // se notifica a todos los demas clientes que este asiento esta en proceso de seleccion
     socket.broadcast.emit(`seat:update:${data.screeningId}`, {
       seat, state: "selected"
     });
@@ -115,7 +123,7 @@ io.on('connection', (socket) => {
 
     const timeout = setTimeout(async () => {
       const now = new Date();
-      const elapsedTime = (now.getTime() - new Date(layout.seats[seat.row][seat.column].timestamp).getTime()) / 1000; // tiempo en segundos
+      const elapsedTime = (now.getTime() - new Date(layout.seats[seat.row][seat.column].timestamp).getTime()) / 1000; 
       
       if (elapsedTime >= 300 && layout.seats[seat.row][seat.column].state === "selected" ){
         layout.seats[seat.row][seat.column] = "available";
@@ -126,35 +134,53 @@ io.on('connection', (socket) => {
       }
 
       seatTimers.delete(`${screeningId}-${seat.row}-${seat.column}`);
-    }, 300000); // 5 minutos en milisegundos
+    }, 300000); 
 
     seatTimers.set(`${screeningId}-${seat.row}-${seat.column}`, timeout);
   
     });
 
   // evento cuando un usuario deselecciona un asiento
-  socket.on('seat:deselect', async (data) => {
-
-    const { screeningId, seat } = data;
-    console.log(`Asiento ${data.seat} deseleccionado para el screening ${data.screeningId}`, data);
-
-    const room = await Room.findOne({
-      where: { id: screeningId } });
-
-    const layout = room.layout as any;
-    layout.seats[seat.row][seat.column] = "available";
-
-    await Room.update({ layout }, { where: { id: room.id } });
-
-    socket.broadcast.emit(`seat:update:${data.screeningId}`, {
-      seat, state: "available"
-    });
-
-    if(seatTimers.has(`${screeningId}-${seat.row}-${seat.column}`)) {
-      clearTimeout(seatTimers.get(`${screeningId}-${seat.row}-${seat.column}`));
-      seatTimers.delete(`${screeningId}-${seat.row}-${seat.column}`);
-    }
+socket.on('seat:select', async (data) => {
+  const { screeningId, seat, userId } = data;
+  console.log(`Asiento ${seat.row}${seat.column} seleccionado para el screening ${screeningId}`, data);
+  
+  const room = await Room.findOne({ where: { id: screeningId } });
+  const layout = room.layout;
+  
+  // Asigna el estado como objeto para el usuario que lo selecciona es selected
+  layout.seats[seat.row][seat.column] = { state: "selected", timestamp: new Date() };
+  await Room.update({ layout }, { where: { id: room.id } });
+  
+  // avisa  que este asiento está siendo seleccionado en proceso o reservado
+  socket.broadcast.emit(`seat:update:${screeningId}`, {
+    seat, 
+    state: "reserved" 
   });
+  
+  // Config del timeout para liberar el asiento tras 5 minutos
+  if (seatTimers.has(`${screeningId}-${seat.row}-${seat.column}`)) {
+    clearTimeout(seatTimers.get(`${screeningId}-${seat.row}-${seat.column}`));
+  }
+  
+  const timeout = setTimeout(async () => {
+    const now = new Date();
+    const elapsedTime =
+      (now.getTime() -
+       new Date(layout.seats[seat.row][seat.column].timestamp).getTime()) / 1000;
+    
+    if (elapsedTime >= 300 && layout.seats[seat.row][seat.column].state === "selected") {
+      layout.seats[seat.row][seat.column] = "available";
+      await Room.update({ layout }, { where: { id: room.id } });
+      io.emit(`seat:update:${screeningId}`, { seat, state: "available" });
+      console.log(`Asiento ${seat.row}${seat.column} liberado automáticamente tras 5 minutos.`);
+    }
+    seatTimers.delete(`${screeningId}-${seat.row}-${seat.column}`);
+  }, 300000);
+  
+  seatTimers.set(`${screeningId}-${seat.row}-${seat.column}`, timeout);
+});
+
 
   
     const PORT = process.env.PORT || 3000;
