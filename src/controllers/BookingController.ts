@@ -34,7 +34,7 @@ export class BookingController {
         return;
       }
 
-      // Obtener datos adicionales
+      // Obtiene datos adicionales
       
       const user = await User.findByPk(userId);
       
@@ -70,11 +70,11 @@ export class BookingController {
         return;
       }
 
-       // Genera folio y fecha de reserva
+       // genera folio y fecha de reserva
       const folio = generateFolio();
       const bookingDate = new Date();
 
-      // Crea la reserva
+      // crea la reserva
       const booking = await Booking.create({
         folio,
         bookingDate,
@@ -85,14 +85,14 @@ export class BookingController {
       });
 
 
-      // Actualiza el layout de la sala
+      // actualiza el layout de la sala
       seats.forEach(({ row, column }) => { 
           layout.seats[row][column] = "selected";
       });
 
       await Room.update({ layout }, { where: { id: room.id } });
 
-      // Calcula precio total
+      // calcula precio total
       const totalPrice = parseFloat(screening.price.toString()) * seats.length;
 
       // **Envia correo de confirmación**
@@ -119,7 +119,7 @@ export class BookingController {
   }
 
   /**
-   *  Cancela una reserva y libera los asientos
+   *  cancela una reserva y libera los asientos
    */
 static async cancelBooking(req: Request, res: Response): Promise<void> {
   try {
@@ -132,7 +132,7 @@ static async cancelBooking(req: Request, res: Response): Promise<void> {
     if (!bookingId) res.status(400).json({ error: "ID de reserva requerido." });
     if (!confirm) res.status(400).json({ error: "Confirmación requerida." });
 
-    // Busca reserva con relaciones 
+    // busca reserva 
     const booking = await Booking.findOne({
       where: { id: bookingId, userId },
       include: [{
@@ -147,7 +147,7 @@ static async cancelBooking(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Obtiene datos necesarios
+    // obtiene datos 
     const screening = booking.screening;
     const room = screening?.room;
     
@@ -191,7 +191,7 @@ static async cancelBooking(req: Request, res: Response): Promise<void> {
       console.error("Error obteniendo datos para correo:", emailError);
     }
 
-    // Respuesta rapida al frontend
+    // Respuesta al frontend
     res.status(200).json({ 
       message: "Reserva cancelada y asientos liberados.",
       bookingId: booking.id,

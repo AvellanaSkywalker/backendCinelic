@@ -9,7 +9,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 type BookingConfirmationEmailType = {
   user: { name: string; email: string };
   movie: { title: string; date: string | Date; time: string; room: string };
-  seats: string[];
+  seats: Array<{ row: string | number; column: string | number}>;
   totalPrice: number;
   folio: string;
   message: string;
@@ -23,7 +23,7 @@ type BookingCancellationEmailType = {
 
 export class BookingEmail {
   /**
-   * Envia el correo de confirmacion de reserva
+   * Envia correo de confirmacion de reserva
    */
   static async sendBookingConfirmation({
     user,
@@ -51,7 +51,7 @@ export class BookingEmail {
               <li style="margin-bottom: 10px;"><strong>📅 Fecha:</strong> ${formattedDate}</li>
               <li style="margin-bottom: 10px;"><strong>⏰ Horario:</strong> ${movie.time}</li>
               <li style="margin-bottom: 10px;"><strong>📍 Sala:</strong> ${movie.room}</li>
-              <li style="margin-bottom: 10px;"><strong>💺 Asientos:</strong> ${seats.join(", ")}</li>
+              <li style="margin-bottom: 10px;"><strong>💺 Asientos:</strong> ${seats.map(seat => `${seat.row}${seat.column}`).join(", ")}</li>
               <li style="margin-bottom: 10px;"><strong>💰 Total:</strong> $${totalPrice.toFixed(2)} MXN</li>
               <li style="margin-bottom: 10px;"><strong>🔖 Folio:</strong> <code>${folio}</code></li>
             </ul>
@@ -74,7 +74,7 @@ export class BookingEmail {
   }
 
   /**
-   * Envia el correo de cancelacion de reserva
+   * Envia  correo de cancelacion de reserva
    */
   static async sendBookingCancellation({
     user,
@@ -83,7 +83,7 @@ export class BookingEmail {
   }: BookingCancellationEmailType) {
     const msg = {
       to: user.email,
-      from: 'CineClic <cinceclic.official@gmail.com>', // Email verificado en SendGrid
+      from: 'CineClic <cinceclic.official@gmail.com>', // Email en SendGrid
       subject: "Cancelación de Reserva - CineClic",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -106,9 +106,9 @@ export class BookingEmail {
 
     try {
       await sgMail.send(msg);
-      console.log(`📧 Correo de cancelación enviado a ${user.email} para la reserva ${folio}`);
+      console.log(` Correo de cancelación enviado a ${user.email} para la reserva ${folio}`);
     } catch (error) {
-      console.error('❌ Error enviando email de cancelación:', error);
+      console.error(' Error enviando email de cancelación:', error);
       throw new Error("Error al enviar el correo de cancelación");
     }
   }
