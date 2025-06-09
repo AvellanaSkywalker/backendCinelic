@@ -2,12 +2,12 @@ import { storage } from '../config/cloudinary';
 import multer from 'multer';
 import { Request, Response, NextFunction } from 'express';
 
-// Config mejorada
+
 export const upload = multer({
   storage,
   limits: { 
     fileSize: 5 * 1024 * 1024, // 5MB
-    files: 1 // Solo permite 1 archivo
+    files: 1 // solo permite 1 archivo
   },
   fileFilter: (req, file, cb) => {
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];

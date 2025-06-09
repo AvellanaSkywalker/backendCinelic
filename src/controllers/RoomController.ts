@@ -3,7 +3,7 @@ import Room from "../models/Room";
 
 export class RoomController {
   /**
-   * Crea una nueva sala
+   * crea una nueva sala
    * espera el name string, capacity numbery layout number
    */
   static async createRoom(req: Request, res: Response): Promise<void> {

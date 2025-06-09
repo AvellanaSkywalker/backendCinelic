@@ -18,7 +18,7 @@ movieRouter.get('/:movieId', authenticate, MovieController.getMovieDetails);
 // actualiza una pelicula usando el ID de la pelicula
 movieRouter.put('/:movieId', authenticate, upload.single('image'), MovieController.updateMovie);
 
-// eliminar una pelicula a partir de su ID
+// elimina una pelicula a partir de su ID
 movieRouter.delete('/:movieId', authenticate, MovieController.deleteMovie);
 
 export default movieRouter;

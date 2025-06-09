@@ -37,7 +37,7 @@ async function createAdmin() {
       email: adminEmail,
       password: passwordHashed,
       role: "admin",
-      isVerified: true, // Asegura que este verificado
+      isVerified: true, // asegura que este verificado
     });
 
     console.log(" Cuenta de administrador creada correctamente.");

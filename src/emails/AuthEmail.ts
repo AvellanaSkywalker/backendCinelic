@@ -13,7 +13,7 @@ type EmailType = {
 };
 
 export class AuthEmail {
-    // Envia email de confirmacion de cuenta
+    // envia email de confirmacion de cuenta
     static async sendConfirmationEmail({ name, email, token }: EmailType) {
         if (!process.env.FRONTEND_URL) {
             throw new Error("NEXT_PUBLIC_FRONTEND_URL no está definido");
@@ -23,7 +23,7 @@ export class AuthEmail {
 
         const msg = {
             to: email,
-            from: 'CineClic <cinceclic.official@gmail.com>', // email verificado en SendGrid
+            from: 'CineClic <cinceclic.official@gmail.com>', // email verificado en sendGrid
             subject: "Confirma tu cuenta en CineClic",
             html: `
                 <h1>¡Gracias por registrarte, ${name}!</h1>
@@ -51,7 +51,7 @@ export class AuthEmail {
 
         const msg = {
             to: email,
-            from: 'CineClic <cinceclic.official@gmail.com>', // email verificado en SendGrid
+            from: 'CineClic <cinceclic.official@gmail.com>', 
             subject: "Restablece tu contraseña en CineClic",
             html: `
                 <p>Hola, ${name}, has solicitado restablecer tu contraseña.</p>

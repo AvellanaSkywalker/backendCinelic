@@ -3,16 +3,16 @@ import User from "../models/User";
 
 export async function cleanUnverifiedUsers(): Promise<number> {
   try {
-    // Calculam la fecha 24 horas a
+    // calcula la fecha 24 horas a
     const expirationDate = new Date();
     expirationDate.setHours(expirationDate.getHours() - 24);
     
-    // Elimina usuarios no verificados creados hace más de 24 horas
+    // elimina usuarios no verificados creados hace mas de 24 hrs
     const deletedCount = await User.destroy({
       where: {
         isVerified: false,
         createdAt: {
-          [Op.lt]: expirationDate // creados antes de la fecha límite
+          [Op.lt]: expirationDate // creados antes de la fecha limite
         }
       }
     });

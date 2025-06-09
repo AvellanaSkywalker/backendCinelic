@@ -39,7 +39,7 @@ export class BookingEmail {
 
     const msg = {
       to: user.email,
-      from: 'CineClic <cinceclic.official@gmail.com>', // Email  en SendGrid
+      from: 'CineClic <cinceclic.official@gmail.com>', // email  en sendGrid
       subject: "Confirmación de Reserva - CineClic",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -74,7 +74,7 @@ export class BookingEmail {
   }
 
   /**
-   * Envia  correo de cancelacion de reserva
+   * envia correo de cancelacion de reserva
    */
   static async sendBookingCancellation({
     user,
@@ -83,7 +83,7 @@ export class BookingEmail {
   }: BookingCancellationEmailType) {
     const msg = {
       to: user.email,
-      from: 'CineClic <cinceclic.official@gmail.com>', // Email en SendGrid
+      from: 'CineClic <cinceclic.official@gmail.com>',
       subject: "Cancelación de Reserva - CineClic",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

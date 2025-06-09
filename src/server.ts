@@ -91,7 +91,7 @@ cron.schedule("0 0 * * *", async () => {
 // Socket.io al servidor 
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: '*' //  origenes permitidos 
+    origin: '*' 
   }
 });
 
@@ -148,11 +148,11 @@ socket.on('seat:select', async (data) => {
   const room = await Room.findOne({ where: { id: screeningId } });
   const layout = room.layout;
   
-  // Asigna el estado como objeto para el usuario que lo selecciona es selected
+  // asigna el estado como objeto para el usuario que lo selecciona es selected
   layout.seats[seat.row][seat.column] = { state: "selected", timestamp: new Date() };
   await Room.update({ layout }, { where: { id: room.id } });
   
-  // avisa  que este asiento está siendo seleccionado en proceso o reservado
+  // avisa  que este asiento esta siendo seleccionado en proceso o reservado
   socket.broadcast.emit(`seat:update:${screeningId}`, {
     seat, 
     state: "reserved" 

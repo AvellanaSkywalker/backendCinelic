@@ -34,7 +34,7 @@ export class BookingController {
         return;
       }
 
-      // Obtiene datos adicionales
+      // obtiene datos adicionales
       
       const user = await User.findByPk(userId);
       
@@ -119,7 +119,7 @@ export class BookingController {
   }
 
   /**
-   *  cancela una reserva y libera los asientos
+   *  cancela una reserva y libera asientos
    */
 static async cancelBooking(req: Request, res: Response): Promise<void> {
   try {
@@ -127,7 +127,7 @@ static async cancelBooking(req: Request, res: Response): Promise<void> {
     const { confirm } = req.body;
     const userId = req.user?.id;
 
-    // Validaciones 
+    // validaciones 
     if (!userId) res.status(401).json({ error: "Usuario no autenticado." });
     if (!bookingId) res.status(400).json({ error: "ID de reserva requerido." });
     if (!confirm) res.status(400).json({ error: "Confirmación requerida." });
@@ -155,7 +155,7 @@ static async cancelBooking(req: Request, res: Response): Promise<void> {
       res.status(500).json({ error: "Datos de sala no disponibles." });
     }
 
-    // Libera asientos 
+    // libera asientos 
     const layout = room.layout as any;
     let seatsUpdated = false;
 
@@ -166,19 +166,19 @@ static async cancelBooking(req: Request, res: Response): Promise<void> {
       }
     });
 
-    // Actualiza solo si hubo cambios
+    // actualiza solo si hubo cambios
     if (seatsUpdated) {
       await Room.update({ layout }, { where: { id: room.id } });
     }
 
-    // Actualiza estado de la reserva
+    // actualiza estado de  reserva
     await booking.update({ status: "CANCELADA" });
 
-    // Envia correo en segundo plano
+    // envia correo en segundo plano
     try {
       const user = await User.findByPk(booking.userId);
       if (user) {
-        // No espera por el envio de correo
+
         BookingEmail.sendBookingCancellation({
           user: { name: user.name, email: user.email },
           folio: booking.folio,
@@ -191,7 +191,7 @@ static async cancelBooking(req: Request, res: Response): Promise<void> {
       console.error("Error obteniendo datos para correo:", emailError);
     }
 
-    // Respuesta al frontend
+    // resp al frontend
     res.status(200).json({ 
       message: "Reserva cancelada y asientos liberados.",
       bookingId: booking.id,

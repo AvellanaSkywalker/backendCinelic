@@ -10,7 +10,7 @@ export class MovieController {
 
   /**
    * Crea una nueva pelicula
-   * Se espera el title, description, duration, rating, posterurl
+   * Se espera title, description, duration, rating, posterurl
    * se puede envoar archivo en el campo image
    */
 static async createMovie(req: Request, res: Response): Promise<void> {
@@ -19,7 +19,7 @@ static async createMovie(req: Request, res: Response): Promise<void> {
     console.log('Archivo recibido:', req.file);
     const { title, description, duration, rating } = req.body;
     
-    // Valida  datos obligatorios
+    // valida  datos obligatorios
     if (!title || !duration || !rating) {
       const missingFields = [];
       if (!title) missingFields.push('title');
@@ -42,7 +42,7 @@ static async createMovie(req: Request, res: Response): Promise<void> {
           ]
         });
 
-        // Elimina archivo temporal
+        // elimina archivo temporal
         if (req.file?.path && fs.existsSync(req.file.path)) {
           fs.unlinkSync(req.file.path);
         }
@@ -139,7 +139,7 @@ static async updateMovie(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Actualiza campos 
+    // actualiza campos 
     const updatableFields = ['title', 'description', 'duration', 'rating'];
     updatableFields.forEach(field => {
       if (req.body[field] !== undefined) {
@@ -147,16 +147,16 @@ static async updateMovie(req: Request, res: Response): Promise<void> {
       }
     });
 
-    // Manejo de imagen
+    // manejo de img
     if (req.file) {
       try {
-        // Elimina imagen anterior si existe
+        // elimina imagen anterior si existe
         if (movie.publicId) {
           await cloudinary.uploader.destroy(movie.publicId)
             .catch(e => console.error('Error al eliminar imagen anterior:', e));
         }
 
-        //  Sube nueva imagen
+        // sube nueva imagen
         const result = await cloudinary.uploader.upload(req.file.path, {
           folder: 'cineclic/posters',
           public_id: `poster_${Date.now()}`,

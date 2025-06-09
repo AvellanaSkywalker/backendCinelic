@@ -6,7 +6,7 @@ import Room from './Room';
   tableName: 'screenings',
 })
 export class Screening extends Model<Screening> {
-  // relacin con Movie cada screening pertenece a una pelicula
+  // relacion con Movie cada screening pertenece a una pelicula
   @ForeignKey(() => Movie)
   @Column({
     type: DataType.INTEGER,

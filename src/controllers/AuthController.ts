@@ -11,13 +11,13 @@ export class AuthController {
     try {
       const { name, email, password, role } = req.body;
 
-      // no permite registrar administradores desde este endpoint.
+      // no permite registrar administradores 
       if (role && role.toLowerCase() === "admin") {
         res.status(403).json({ error: "No se permite registrar un admin a través de esta ruta." });
         return;
       }
 
-      // Verifica si el email ya existe
+      // verifica si el email ya existe
       const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {
         res.status(400).json({ error: "El email ya se encuentra registrado." });
@@ -30,18 +30,18 @@ export class AuthController {
         name,
         email,
         password: hashedPassword,
-        role: "user" // Fuerza siempre el role a user
+        role: "user" // fuerza el role a user
       });
 
       if(!process.env.JWT_SECRET){
         throw new Error("la variable esta configurada")
       }
 
-      // gnerar un token de confirmacion vslido por 24h para enviar por email
+      // gnerar un token de confirmacion vslido por 24hrs para enviar por email
       console.log("JWT_SECRET en generación:", process.env.JWT_SECRET);
       const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "24h" });
 
-      // Envia email de confirmacin 
+      // envia email de confirm 
       await AuthEmail.sendConfirmationEmail({ name, email, token });
 
       res.status(201).json({ message: "Cuenta creada correctamente. Revisa tu correo para confirmar la cuenta.", user });
@@ -53,7 +53,7 @@ export class AuthController {
     }
   }
 
-  // CONFIRMACION DE CUENTA VIA TOKEN
+  // confirmacion cuenta via token en link
 static async confirmAccountByLink(req: Request, res: Response): Promise<void> {
     try {
         const { token } = req.params;
@@ -122,7 +122,7 @@ static async login(req: Request, res: Response): Promise<void> {
         return;
       }
 
-      // Validacion extra para administradores
+      // validacion extra para admin
       if (user.role === "admin" && !user.email.endsWith("@cineclic.ad.com")) {
         res.status(403).json({ error: "Acceso restringido, el email admin no cumple con el dominio requerido." });
         return;
@@ -134,7 +134,7 @@ static async login(req: Request, res: Response): Promise<void> {
         return;
       }
 
-      // Genera el token JWT
+      // genera token JWT
       const token = generateJWT(user.id.toString());
 
       res.status(200).json({ message: "Inicio de sesión exitoso.", 
@@ -149,7 +149,7 @@ static async login(req: Request, res: Response): Promise<void> {
     }
 }
 
-  // ENVIO DE EMAIL PARA RECUPERACION DE CONTRASENIA
+  // envio de email para recuperar contrasenia
   static async forgotPassword(req: Request, res: Response): Promise<void> {
     try {
       const { email } = req.body;
@@ -199,7 +199,7 @@ static async login(req: Request, res: Response): Promise<void> {
         // hashea nueva contrasenia
         const hashedPassword = await hashPassword(newPassword);
 
-        // Actualiza en DB
+        // actualiza en DB
         await User.update(
             { password: hashedPassword },
             { where: { id: decoded.id } }

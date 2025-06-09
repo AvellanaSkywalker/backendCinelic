@@ -43,7 +43,7 @@ export class Movie extends Model<Movie> {
   })
   declare publicId: string | null;
 
-  //  Una pelicula puede tener varios screenings 
+  //  una pelicula puede tener varios screenings 
   @HasMany(() => Screening)
   declare screenings: Screening[];
 }

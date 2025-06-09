@@ -9,7 +9,7 @@ const bookingRouter = Router();
 bookingRouter.post('/create', authenticate, BookingController.createBooking);
 
 // ruta para cancelar una reserva requiere autenticacion
-// el bookingId se pasa en la URL.
+// el bookingId se pasa en la URL
 bookingRouter.patch('/:bookingId/cancel', authenticate, BookingController.cancelBooking);
 
 bookingRouter.get('/user', authenticate, BookingController.getUserBookings); // obtiene reservas del usuario autenticado

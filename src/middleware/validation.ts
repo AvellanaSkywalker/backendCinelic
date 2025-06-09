@@ -27,9 +27,9 @@ export const validateLoginInput = [
         .notEmpty().withMessage('Contraseña requerida')
 ];
 
-// middleware para manejar errores de validacion en las solicitudes
+// para manejar errores de validacion en las solicitudes
 export const handleInputErrors = (req: Request, res: Response, next: NextFunction) => {
-    // Obtiene los errores de valida 
+    // obtiene los errores 
     const errors = validationResult(req);
 
     // si hay errores responde con un estado 400 y devuelve los errores 
