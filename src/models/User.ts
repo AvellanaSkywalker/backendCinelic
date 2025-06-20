@@ -25,11 +25,11 @@ export default class User extends Model<User> {
   declare password: string;
 
   @Column({
-    type: DataType.ENUM('admin', 'user'),
+    type: DataType.ENUM('admin', 'user', 'guest'), // Agrega 'guest'
     allowNull: false,
     defaultValue: 'user',
   })
-  declare role: 'admin' | 'user';
+  declare role: 'admin' | 'user' | 'guest';
 
   @Column({
     type: DataType.BOOLEAN,

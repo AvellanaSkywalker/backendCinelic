@@ -15,7 +15,7 @@ screeningRouter.get('/', authenticate, ScreeningController.getScreenings);
 screeningRouter.get('/:screeningId', authenticate, ScreeningController.getScreeningById);
 
 // actualiza un screening
-screeningRouter.put('/:screeningId', authenticate, ScreeningController.updateScreening);//se elimino validateScreening
+screeningRouter.put('/:screeningId', authenticate, ScreeningController.updateScreening);
 
 // elimina un screening
 screeningRouter.delete('/:screeningId', authenticate, ScreeningController.deleteScreening);

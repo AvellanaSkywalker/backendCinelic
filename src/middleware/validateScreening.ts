@@ -1,12 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 
 export const validateScreening = (req: Request, res: Response, next: NextFunction) => {
-  const { movieId, roomId, date, price, startTime, endTime } = req.body; 
+  const { movieId, roomId, price, startTime, endTime } = req.body; 
   
   const missingFields = [];
   if (!movieId) missingFields.push('movieId');
   if (!roomId) missingFields.push('roomId');
-  if (!date) missingFields.push('date');
   if (!startTime) missingFields.push('startTime'); 
   if (!endTime) missingFields.push('endTime');     
   if (price === undefined) missingFields.push('price');

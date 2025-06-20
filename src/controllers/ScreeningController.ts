@@ -7,39 +7,41 @@ export class ScreeningController {
    * Crea un nuevo screening
    * se espera el movieId, roomId, startTime, endTime y price
    */
-  static async createScreening(req: Request, res: Response): Promise<void> {
-    try {
-      const { movieId, roomId, date, startTime, endTime, price } = req.body;
-      if (!movieId || !roomId || !date || !startTime || !endTime || price === undefined) {
-        res.status(400).json({ error: 'Faltan datos obligatorios: movieId, roomId, startTime, endTime y price.' });
-        return;
-      }
+static async createScreening(req: Request, res: Response): Promise<void> {
+  try {
+    const { movieId, roomId, startTime, endTime, price } = req.body;
+    console.log('recibe', req.body);
+    if (!movieId || !roomId || !startTime || !endTime || price === undefined) {
+      res.status(400)
+         .json({ error: 'Faltan datos obligatorios: movieId, roomId, startTime, endTime y price.' });
+      return;
+    }
 
-    const screeningStartTime = new Date(`${date}T${startTime}`);
-    const screeningEndTime = new Date(screeningStartTime);
-    screeningEndTime.setMinutes(screeningEndTime.getMinutes() + 120); 
-
+    // Ya no necesitas screeningStartTime ni screeningEndTime
     const screening = await Screening.create({
       movieId,
       roomId,
-      startTime: screeningStartTime,
-      endTime: screeningEndTime,
-      price: Number(price)
+      startTime: new Date(startTime),
+      endTime:   new Date(endTime),
+      price:     Number(price),
     });
 
-      res.status(201).json({ message: 'Screening creada exitosamente.', screening });
-    } catch (error) {
-      console.error('Error al crear screening:', error);
-      res.status(500).json({ error: 'Error interno al crear screening.' });
-    }
+    res.status(201).json({ message: 'Screening creada exitosamente.', screening });
+  } catch (error) {
+    console.error('Error al crear screening:', error);
+    res.status(500).json({ error: 'Error interno al crear screening.' });
   }
+}
+
 
   /**
    * obtiene todas las funciones 
    */
   static async getScreenings(req: Request, res: Response): Promise<void> {
     try {
-      const screenings = await Screening.findAll();
+      const screenings = await Screening.findAll({
+        order: [['startTime', 'ASC']]
+      });
       res.status(200).json({ screenings });
     } catch (error) {
       console.error('Error al obtener screenings:', error);
